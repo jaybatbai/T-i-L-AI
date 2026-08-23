@@ -222,16 +222,34 @@
           </div>
 
           <div>
+            <!-- Danh sách 3 nút chọn biểu quyết -->
             <div id="voting-buttons" class="grid grid-cols-3 gap-2.5 hidden">
-              <button id="btn-vote-yes" onclick="voteAnswer('YES')" class="group bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:border-emerald-500 font-black py-3.5 rounded-2xl transition active:scale-95 text-sm sm:text-base tracking-wide">
+              <button id="btn-vote-yes" onclick="selectVoteOption('YES')" class="vote-opt-btn bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-black py-3.5 rounded-2xl transition active:scale-95 text-sm sm:text-base tracking-wide">
                 CÓ
               </button>
-              <button id="btn-vote-no" onclick="voteAnswer('NO')" class="group bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 hover:border-rose-500 font-black py-3.5 rounded-2xl transition active:scale-95 text-sm sm:text-base tracking-wide">
+              <button id="btn-vote-no" onclick="selectVoteOption('NO')" class="vote-opt-btn bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-black py-3.5 rounded-2xl transition active:scale-95 text-sm sm:text-base tracking-wide">
                 KHÔNG
               </button>
-              <button id="btn-vote-unknown" onclick="voteAnswer('UNKNOWN')" class="group bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold py-3.5 rounded-2xl transition active:scale-95 text-xs sm:text-sm tracking-wide">
+              <button id="btn-vote-unknown" onclick="selectVoteOption('UNKNOWN')" class="vote-opt-btn bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold py-3.5 rounded-2xl transition active:scale-95 text-xs sm:text-sm tracking-wide">
                 KHÔNG RÕ
               </button>
+            </div>
+
+            <!-- Thanh xác nhận lựa chọn trước khi gửi -->
+            <div id="panel-vote-confirm" class="hidden mt-3 p-3 bg-slate-950/90 border border-amber-500/40 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-lg">
+              <div class="text-xs">
+                <span class="text-slate-400">Bạn đã chọn:</span>
+                <span id="pending-vote-label" class="font-black text-sm ml-1"></span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button id="btn-cancel-vote" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition border border-slate-700 active:scale-95">
+                  Chọn lại
+                </button>
+                <button id="btn-confirm-vote" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black shadow-md shadow-amber-500/20 transition active:scale-95 flex items-center gap-1">
+                  <span>Xác nhận gửi</span>
+                  <span>✓</span>
+                </button>
+              </div>
             </div>
 
             <div id="vote-results" class="mt-3.5 pt-3 border-t border-slate-800 flex flex-wrap gap-2 text-xs"></div>
@@ -310,10 +328,16 @@
     const btnMakeGuess = document.getElementById('btn-make-guess');
     const btnSkipTurn = document.getElementById('btn-skip-turn');
     const currentQuestionText = document.getElementById('current-question-text');
+    
     const votingButtons = document.getElementById('voting-buttons');
     const btnVoteYes = document.getElementById('btn-vote-yes');
     const btnVoteNo = document.getElementById('btn-vote-no');
     const btnVoteUnknown = document.getElementById('btn-vote-unknown');
+    const panelVoteConfirm = document.getElementById('panel-vote-confirm');
+    const pendingVoteLabel = document.getElementById('pending-vote-label');
+    const btnCancelVote = document.getElementById('btn-cancel-vote');
+    const btnConfirmVote = document.getElementById('btn-confirm-vote');
+
     const voteResults = document.getElementById('vote-results');
     const voteCounterBadge = document.getElementById('vote-counter-badge');
     const gameLogs = document.getElementById('game-logs');
@@ -327,12 +351,10 @@
     let isHost = false;
     let currentRoomCode = '';
     let hasVotedCurrentQuestion = false;
+    let selectedVoteOption = null; // Lưu lựa chọn tạm thời trước khi bấm xác nhận
 
-    // Quản lý kết nối chuẩn xác bằng Map
     const connectionsMap = new Map();
     let serverState = null;
-
-    // Dành cho Client
     let hostConnection = null;
 
     function showToast(msg) {
@@ -774,12 +796,51 @@
       sendAction('NEXT_TURN');
     });
 
-    window.voteAnswer = function(answer) {
+    // ==========================================
+    // QUY TRÌNH BIỂU QUYẾT 2 BƯỚC (CHỌN -> XÁC NHẬN)
+    // ==========================================
+    window.selectVoteOption = function(answer) {
       if (hasVotedCurrentQuestion) return;
-      hasVotedCurrentQuestion = true;
-      setVoteButtonsDisabled(true);
-      sendAction('SUBMIT_ANSWER', { answer });
+      selectedVoteOption = answer;
+
+      // Xóa highlight cũ trên các nút
+      btnVoteYes.classList.remove('ring-2', 'ring-emerald-400', 'bg-emerald-500/30');
+      btnVoteNo.classList.remove('ring-2', 'ring-rose-400', 'bg-rose-500/30');
+      btnVoteUnknown.classList.remove('ring-2', 'ring-slate-300', 'bg-slate-700');
+
+      // Thêm highlight cho nút đang chọn
+      if (answer === 'YES') {
+        btnVoteYes.classList.add('ring-2', 'ring-emerald-400', 'bg-emerald-500/30');
+        pendingVoteLabel.textContent = 'CÓ';
+        pendingVoteLabel.className = 'font-black text-sm ml-1 text-emerald-400';
+      } else if (answer === 'NO') {
+        btnVoteNo.classList.add('ring-2', 'ring-rose-400', 'bg-rose-500/30');
+        pendingVoteLabel.textContent = 'KHÔNG';
+        pendingVoteLabel.className = 'font-black text-sm ml-1 text-rose-400';
+      } else {
+        btnVoteUnknown.classList.add('ring-2', 'ring-slate-300', 'bg-slate-700');
+        pendingVoteLabel.textContent = 'KHÔNG RÕ';
+        pendingVoteLabel.className = 'font-black text-sm ml-1 text-slate-300';
+      }
+
+      panelVoteConfirm.classList.remove('hidden');
     };
+
+    btnCancelVote.addEventListener('click', () => {
+      selectedVoteOption = null;
+      btnVoteYes.classList.remove('ring-2', 'ring-emerald-400', 'bg-emerald-500/30');
+      btnVoteNo.classList.remove('ring-2', 'ring-rose-400', 'bg-rose-500/30');
+      btnVoteUnknown.classList.remove('ring-2', 'ring-slate-300', 'bg-slate-700');
+      panelVoteConfirm.classList.add('hidden');
+    });
+
+    btnConfirmVote.addEventListener('click', () => {
+      if (!selectedVoteOption || hasVotedCurrentQuestion) return;
+      hasVotedCurrentQuestion = true;
+      panelVoteConfirm.classList.add('hidden');
+      setVoteButtonsDisabled(true);
+      sendAction('SUBMIT_ANSWER', { answer: selectedVoteOption });
+    });
 
     function setVoteButtonsDisabled(disabled) {
       btnVoteYes.disabled = disabled;
@@ -790,9 +851,9 @@
         btnVoteNo.classList.add('opacity-40', 'cursor-not-allowed');
         btnVoteUnknown.classList.add('opacity-40', 'cursor-not-allowed');
       } else {
-        btnVoteYes.classList.remove('opacity-40', 'cursor-not-allowed');
-        btnVoteNo.classList.remove('opacity-40', 'cursor-not-allowed');
-        btnVoteUnknown.classList.remove('opacity-40', 'cursor-not-allowed');
+        btnVoteYes.classList.remove('opacity-40', 'cursor-not-allowed', 'ring-2', 'ring-emerald-400', 'bg-emerald-500/30');
+        btnVoteNo.classList.remove('opacity-40', 'cursor-not-allowed', 'ring-2', 'ring-rose-400', 'bg-rose-500/30');
+        btnVoteUnknown.classList.remove('opacity-40', 'cursor-not-allowed', 'ring-2', 'ring-slate-300', 'bg-slate-700');
       }
     }
 
@@ -919,6 +980,8 @@
           if (data.currentQuestion.text !== lastRenderedQuestionText) {
             lastRenderedQuestionText = data.currentQuestion.text;
             hasVotedCurrentQuestion = false;
+            selectedVoteOption = null;
+            panelVoteConfirm.classList.add('hidden');
             setVoteButtonsDisabled(false);
           }
 
@@ -928,6 +991,7 @@
             votingButtons.classList.remove('hidden');
           } else {
             votingButtons.classList.add('hidden');
+            panelVoteConfirm.classList.add('hidden');
           }
 
           const answers = data.currentQuestion.answers || {};
@@ -952,6 +1016,8 @@
         } else {
           lastRenderedQuestionText = '';
           hasVotedCurrentQuestion = false;
+          selectedVoteOption = null;
+          panelVoteConfirm.classList.add('hidden');
           setVoteButtonsDisabled(false);
           currentQuestionText.textContent = 'Chưa có câu hỏi nào trong lượt này...';
           votingButtons.classList.add('hidden');
