@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đoán Nhân Vật - Who Am I? (P2P Edition)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- PeerJS CDN: Thư viện kết nối WebRTC P2P không cần backend -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(71, 85, 105, 0.8);
+      border-radius: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(100, 116, 139, 1);
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); }
+      50% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.8); }
+    }
+    .glow-active-turn {
+      animation: pulse-glow 2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-start p-3 sm:p-6 selection:bg-amber-500 selection:text-slate-950">
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed top-5 right-5 z-50 transform transition-all duration-300 translate-y-[-20px] opacity-0 pointer-events-none bg-slate-900/95 border border-amber-500/40 text-amber-300 font-semibold px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 backdrop-blur-md">
+    <svg class="w-5 h-5 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    </svg>
+    <span id="toast-message">Thông báo</span>
+  </div>
+
+  <!-- Background Ambient Lights -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+    <div class="absolute -top-32 left-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl"></div>
+    <div class="absolute top-1/2 -right-32 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-32 left-1/3 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl"></div>
+  </div>
+
+  <!-- MÀN HÌNH 1: ĐĂNG NHẬP / VÀO PHÒNG -->
+  <div id="screen-auth" class="w-full max-w-md bg-slate-900/80 border border-slate-800 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-2xl my-auto transition-all">
+    <div class="text-center mb-8">
+      <div class="inline-flex p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20 text-3xl mb-3 shadow-inner">
+        🎭
+      </div>
+      <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-500 tracking-tight">
+        ĐOÁN NHÂN VẬT
+      </h1>
+      <p class="text-slate-400 text-sm mt-1.5 font-medium">Phiên bản Web tĩnh P2P - Không cần máy chủ</p>
+    </div>
+
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 ml-1">Tên của bạn</label>
+        <input id="input-name" type="text" maxlength="18" placeholder="Nhập tên đại diện..." class="w-full bg-slate-950/80 border border-slate-700/80 rounded-2xl px-4 py-3.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all">
+      </div>
+
+      <div class="pt-2">
+        <button id="btn-create" class="w-full group bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold py-3.5 rounded-2xl transition-all duration-200 shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 active:scale-[0.98] flex items-center justify-center gap-2">
+          <svg class="w-5 h-5 transition-transform group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
+          </svg>
+          Tạo phòng mới
+        </button>
+      </div>
+
+      <div class="flex items-center my-5">
+        <div class="flex-grow border-t border-slate-800"></div>
+        <span class="px-3 text-slate-600 text-xs font-bold tracking-widest uppercase">Hoặc vào phòng có sẵn</span>
+        <div class="flex-grow border-t border-slate-800"></div>
+      </div>
+
+      <div class="flex gap-2">
+        <input id="input-room-code" type="text" maxlength="4" placeholder="MÃ PHÒNG (4 chữ)" class="flex-grow uppercase bg-slate-950/80 border border-slate-700/80 rounded-2xl px-4 py-3.5 text-center font-mono font-bold tracking-widest text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all">
+        <button id="btn-join" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-3.5 rounded-2xl transition duration-200 shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/40 active:scale-[0.98]">
+          Vào
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MÀN HÌNH 2: PHÒNG CHỜ (LOBBY) -->
+  <div id="screen-lobby" class="w-full max-w-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-2xl hidden my-auto transition-all">
+    <div class="flex flex-wrap gap-3 justify-between items-center border-b border-slate-800 pb-5 mb-6">
+      <div>
+        <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Mã phòng thi đấu</span>
+        <div class="flex items-center gap-2 mt-0.5">
+          <h2 id="lobby-room-code" class="text-3xl font-black text-amber-400 tracking-widest font-mono">----</h2>
+          <button id="btn-copy-code-lobby" title="Sao chép mã phòng" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition active:scale-90">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div id="badge-role" class="px-4 py-1.5 bg-slate-800 border border-slate-700 text-slate-300 text-xs font-bold rounded-full">
+        Thành viên
+      </div>
+    </div>
+
+    <div class="mb-6">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wide">Người tham gia</h3>
+        <span class="text-xs font-bold px-2.5 py-0.5 bg-slate-800 border border-slate-700 rounded-full text-slate-400">
+          <span id="lobby-player-count">0</span> người
+        </span>
+      </div>
+      <div id="lobby-player-list" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+    </div>
+
+    <!-- Tùy chỉnh danh sách nhân vật (Chỉ Host thấy) -->
+    <div id="host-settings" class="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 mb-6 hidden">
+      <div class="flex items-center gap-2 mb-1.5">
+        <span class="text-amber-400 text-sm">⚙️</span>
+        <label class="text-xs font-bold uppercase tracking-wider text-amber-400">Tùy biến bộ nhân vật (Tùy chọn)</label>
+      </div>
+      <input id="input-custom-chars" type="text" placeholder="Ví dụ: Doraemon, Nobita, Chaien, Xeko (cách nhau bằng dấu phẩy)" class="w-full text-xs bg-slate-900 border border-slate-700/80 rounded-xl p-3 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-400">
+      <p class="text-[11px] text-slate-500 mt-1.5">Để trống để sử dụng kho 50+ nhân vật Hoạt hình, Phim ảnh, Anime mặc định.</p>
+    </div>
+
+    <div>
+      <button id="btn-start-game" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold py-4 rounded-2xl transition duration-200 shadow-lg shadow-emerald-600/20 active:scale-[0.98] hidden flex items-center justify-center gap-2 text-base">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        Bắt đầu trò chơi
+      </button>
+      <div id="wait-host-msg" class="w-full text-center text-sm font-medium text-slate-400 py-3.5 bg-slate-950/40 border border-slate-800 rounded-2xl flex items-center justify-center gap-2">
+        <div class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></div>
+        Đang chờ chủ phòng bắt đầu trận đấu...
+      </div>
+    </div>
+  </div>
+
+  <!-- MÀN HÌNH 3: BÀN CHƠI CHÍNH -->
+  <div id="screen-game" class="w-full max-w-5xl hidden flex-grow flex flex-col gap-4">
+
+    <!-- Top Bar -->
+    <div class="flex flex-wrap gap-2 justify-between items-center bg-slate-900/90 border border-slate-800 backdrop-blur-xl px-5 py-3.5 rounded-2xl shadow-lg">
+      <div class="flex items-center gap-3">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Phòng:</span>
+        <span id="game-room-code" class="font-black text-amber-400 tracking-wider font-mono text-lg"></span>
+        <button id="btn-copy-code-game" title="Sao chép mã phòng" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <div id="turn-banner" class="text-xs sm:text-sm font-bold px-4 py-1.5 rounded-full transition-all duration-300">
+          Lượt của ai đó
+        </div>
+        <button id="btn-restart-game" class="hidden text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-xl transition shadow-md">
+          Chơi ván mới
+        </button>
+      </div>
+    </div>
+
+    <!-- Grid danh sách thẻ người chơi -->
+    <div id="players-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4"></div>
+
+    <!-- Khu vực tương tác theo lượt -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 flex-grow">
+
+      <!-- Cột trái: Bảng điều khiển hành động & Biểu quyết -->
+      <div class="md:col-span-2 flex flex-col gap-4">
+
+        <!-- Bảng thao tác dành cho người đang có lượt -->
+        <div id="panel-my-turn" class="bg-gradient-to-b from-amber-500/10 via-slate-900 to-slate-900 border-2 border-amber-400/80 rounded-3xl p-5 shadow-2xl hidden relative overflow-hidden">
+          <div class="absolute -right-8 -top-8 w-24 h-24 bg-amber-400/10 rounded-full blur-xl pointer-events-none"></div>
+
+          <div class="flex items-center justify-between mb-3.5">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+              <span class="text-xs font-extrabold text-amber-400 uppercase tracking-wider">Lượt của bạn</span>
+            </div>
+            <span class="text-xs text-slate-400 font-medium">Đặt câu hỏi Có/Không hoặc đoán tên nhân vật</span>
+          </div>
+
+          <div class="space-y-3">
+            <div class="flex gap-2">
+              <input id="input-question" type="text" placeholder="Ví dụ: Tôi có phải là siêu anh hùng không?..." class="flex-grow bg-slate-950/80 border border-slate-700/80 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 text-slate-100 placeholder-slate-500">
+              <button id="btn-send-question" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-5 py-3 rounded-2xl text-sm transition shadow-lg shadow-amber-500/20 active:scale-95 flex items-center gap-1.5 flex-shrink-0">
+                <span>Hỏi</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                </svg>
+              </button>
+            </div>
+
+            <div class="flex flex-wrap sm:flex-nowrap items-center gap-2">
+              <input id="input-guess-name" type="text" placeholder="Chốt tên nhân vật: Bạn là ai?..." class="flex-grow bg-slate-950/80 border border-slate-700/80 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 text-slate-100 placeholder-slate-500">
+              <div class="flex gap-2 w-full sm:w-auto">
+                <button id="btn-make-guess" class="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-5 py-3 rounded-2xl text-sm transition shadow-lg shadow-emerald-600/20 active:scale-95 flex-shrink-0">
+                  Chốt tên!
+                </button>
+                <button id="btn-skip-turn" class="flex-1 sm:flex-initial bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-3 rounded-2xl text-sm transition active:scale-95 border border-slate-700 flex-shrink-0">
+                  Bỏ lượt
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bảng biểu quyết / Trả lời câu hỏi hiện tại -->
+        <div id="panel-vote" class="bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-3xl p-5 shadow-xl flex-grow flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Câu hỏi trên bàn</span>
+              <span id="vote-counter-badge" class="text-[11px] font-semibold text-slate-400"></span>
+            </div>
+            <div class="min-h-[60px] flex items-center bg-slate-950/50 p-3.5 rounded-2xl border border-slate-800/80 mb-4">
+              <p id="current-question-text" class="text-base sm:text-lg font-medium text-slate-200 italic">Chưa có câu hỏi nào trong lượt này...</p>
+            </div>
+          </div>
+
+          <div>
+            <div id="voting-buttons" class="grid grid-cols-3 gap-2.5 hidden">
+              <button onclick="voteAnswer('YES')" class="group bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:border-emerald-500 font-black py-3 rounded-2xl transition active:scale-95 flex items-center justify-center gap-1.5 text-sm sm:text-base">
+                <span class="text-lg">👍</span> CÓ
+              </button>
+              <button onclick="voteAnswer('NO')" class="group bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 hover:border-rose-500 font-black py-3 rounded-2xl transition active:scale-95 flex items-center justify-center gap-1.5 text-sm sm:text-base">
+                <span class="text-lg">👎</span> KHÔNG
+              </button>
+              <button onclick="voteAnswer('UNKNOWN')" class="group bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold py-3 rounded-2xl transition active:scale-95 flex items-center justify-center gap-1.5 text-xs sm:text-sm">
+                <span class="text-lg">🤷</span> KHÔNG RÕ
+              </button>
+            </div>
+
+            <div id="vote-results" class="mt-3.5 pt-3 border-t border-slate-800 flex flex-wrap gap-2 text-xs"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Cột phải: Nhật ký trận đấu (Logs) -->
+      <div class="bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-3xl p-4 flex flex-col h-72 md:h-auto shadow-xl">
+        <div class="flex items-center justify-between mb-2.5 pb-2 border-b border-slate-800">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+            <span>📜</span> Nhật ký ván đấu
+          </span>
+          <span class="text-[10px] text-slate-500 font-medium">P2P Network</span>
+        </div>
+        <div id="game-logs" class="flex-grow overflow-y-auto space-y-2 text-xs text-slate-300 pr-1 custom-scrollbar"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // KHO NHÂN VẬT MẶC ĐỊNH
+    // ==========================================
+    const DEFAULT_CHARACTERS = [
+      'Doraemon', 'Nobita', 'Shizuka', 'Chaien', 'Suneo',
+      'Conan', 'Ran Mori', 'Kaito Kid', 'Son Goku', 'Vegeta',
+      'Naruto', 'Sasuke', 'Kakashi', 'Luffy', 'Zoro', 'Sanji',
+      'Levi Ackerman', 'Tanjiro', 'Nezuko', 'Gojo Satoru',
+      'Saitama', 'Pikachu', 'Spider-Man', 'Iron Man', 'Captain America',
+      'Thor', 'Hulk', 'Thanos', 'Doctor Strange', 'Deadpool',
+      'Batman', 'Superman', 'Joker', 'Harry Potter', 'Hermione Granger',
+      'Voldemort', 'Jack Sparrow', 'Sherlock Holmes', 'John Wick',
+      'Elsa', 'Shrek', 'Mickey Mouse', 'Tom', 'Jerry', 'Po (Kung Fu Panda)',
+      'Cristiano Ronaldo', 'Lionel Messi', 'Sơn Tùng M-TP'
+    ];
+
+    // ==========================================
+    // DOM ELEMENTS
+    // ==========================================
+    const screenAuth = document.getElementById('screen-auth');
+    const screenLobby = document.getElementById('screen-lobby');
+    const screenGame = document.getElementById('screen-game');
+
+    const inputName = document.getElementById('input-name');
+    const inputRoomCode = document.getElementById('input-room-code');
+    const btnCreate = document.getElementById('btn-create');
+    const btnJoin = document.getElementById('btn-join');
+
+    const lobbyRoomCode = document.getElementById('lobby-room-code');
+    const lobbyPlayerList = document.getElementById('lobby-player-list');
+    const lobbyPlayerCount = document.getElementById('lobby-player-count');
+    const hostSettings = document.getElementById('host-settings');
+    const btnStartGame = document.getElementById('btn-start-game');
+    const waitHostMsg = document.getElementById('wait-host-msg');
+    const inputCustomChars = document.getElementById('input-custom-chars');
+    const badgeRole = document.getElementById('badge-role');
+    const btnCopyCodeLobby = document.getElementById('btn-copy-code-lobby');
+
+    const gameRoomCode = document.getElementById('game-room-code');
+    const btnCopyCodeGame = document.getElementById('btn-copy-code-game');
+    const turnBanner = document.getElementById('turn-banner');
+    const btnRestartGame = document.getElementById('btn-restart-game');
+    const playersGrid = document.getElementById('players-grid');
+    const panelMyTurn = document.getElementById('panel-my-turn');
+    const inputQuestion = document.getElementById('input-question');
+    const btnSendQuestion = document.getElementById('btn-send-question');
+    const inputGuessName = document.getElementById('input-guess-name');
+    const btnMakeGuess = document.getElementById('btn-make-guess');
+    const btnSkipTurn = document.getElementById('btn-skip-turn');
+    const currentQuestionText = document.getElementById('current-question-text');
+    const votingButtons = document.getElementById('voting-buttons');
+    const voteResults = document.getElementById('vote-results');
+    const voteCounterBadge = document.getElementById('vote-counter-badge');
+    const gameLogs = document.getElementById('game-logs');
+
+    // ==========================================
+    // BIẾN TRẠNG THÁI TOÀN CỤC & PEERJS
+    // ==========================================
+    let myPeer = null;
+    let myId = null;
+    let myName = '';
+    let isHost = false;
+    let currentRoomCode = '';
+
+    // Dành cho Host
+    let connections = []; // Danh sách dataConnection tới các client
+    let serverState = null; // Trạng thái game gốc do Host giữ
+
+    // Dành cho Client
+    let hostConnection = null; // Kết nối từ client tới Host
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const toastMessage = document.getElementById('toast-message');
+      toastMessage.textContent = msg;
+      toast.classList.remove('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+      toast.classList.add('opacity-100', 'translate-y-0');
+
+      setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+      }, 3000);
+    }
+
+    function copyRoomCode() {
+      if (!currentRoomCode) return;
+      navigator.clipboard.writeText(currentRoomCode).then(() => {
+        showToast(`Đã sao chép mã phòng: ${currentRoomCode}`);
+      }).catch(() => {
+        showToast(`Mã phòng: ${currentRoomCode}`);
+      });
+    }
+
+    btnCopyCodeLobby.addEventListener('click', copyRoomCode);
+    btnCopyCodeGame.addEventListener('click', copyRoomCode);
+
+    function generateRoomCode() {
+      return Math.random().toString(36).substring(2, 6).toUpperCase();
+    }
+
+    function shuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // ==========================================
+    // LOGIC DÀNH CHO CHỦ PHÒNG (HOST ENGINE)
+    // ==========================================
+    function initHost(roomCode, playerName) {
+      const peerId = `whoami-${roomCode.toLowerCase()}`;
+      myPeer = new Peer(peerId);
+
+      myPeer.on('open', (id) => {
+        myId = id;
+        isHost = true;
+        currentRoomCode = roomCode;
+
+        serverState = {
+          code: roomCode,
+          hostId: id,
+          state: 'LOBBY',
+          turnIndex: 0,
+          currentQuestion: null,
+          players: [
+            {
+              id: id,
+              name: playerName,
+              character: null,
+              hasGuessedCorrectly: false
+            }
+          ],
+          logs: [`🎉 Phòng [${roomCode}] đã được tạo bởi ${playerName}.`]
+        };
+
+        enterLobbyUI(roomCode, true);
+        broadcastHostState();
+      });
+
+      myPeer.on('connection', (conn) => {
+        connections.push(conn);
+
+        conn.on('data', (data) => {
+          handleClientAction(conn, data);
+        });
+
+        conn.on('close', () => {
+          handlePlayerDisconnect(conn.peer);
+        });
+      });
+
+      myPeer.on('error', (err) => {
+        if (err.type === 'unavailable-id') {
+          showToast('Mã phòng này vừa được sử dụng, vui lòng thử bấm Tạo phòng lại!');
+        } else {
+          showToast('Lỗi kết nối P2P: ' + err.type);
+        }
+      });
+    }
+
+    function handleClientAction(conn, data) {
+      if (!serverState) return;
+      const { type, payload } = data;
+
+      if (type === 'JOIN_REQUEST') {
+        if (serverState.state !== 'LOBBY') {
+          conn.send({ type: 'ERROR', message: 'Trò chơi đã bắt đầu rồi!' });
+          return;
+        }
+        serverState.players.push({
+          id: conn.peer,
+          name: payload.name || `Người chơi ${serverState.players.length + 1}`,
+          character: null,
+          hasGuessedCorrectly: false
+        });
+        serverState.logs.push(`👋 [${payload.name}] đã tham gia phòng.`);
+        broadcastHostState();
+      }
+
+      if (type === 'ASK_QUESTION') {
+        const activePlayer = serverState.players[serverState.turnIndex];
+        if (activePlayer.id !== conn.peer) return;
+
+        serverState.currentQuestion = {
+          text: payload.question,
+          askedBy: activePlayer.name,
+          answers: {}
+        };
+        serverState.logs.push(`❓ ${activePlayer.name} hỏi: "${payload.question}"`);
+        broadcastHostState();
+      }
+
+      if (type === 'SUBMIT_ANSWER') {
+        if (!serverState.currentQuestion) return;
+        const activePlayer = serverState.players[serverState.turnIndex];
+        if (activePlayer.id === conn.peer) return;
+
+        serverState.currentQuestion.answers[conn.peer] = payload.answer;
+        broadcastHostState();
+      }
+
+      if (type === 'NEXT_TURN') {
+        const activePlayer = serverState.players[serverState.turnIndex];
+        if (activePlayer.id === conn.peer || serverState.hostId === conn.peer) {
+          serverState.currentQuestion = null;
+          advanceHostTurn();
+          broadcastHostState();
+        }
+      }
+
+      if (type === 'MAKE_GUESS') {
+        const player = serverState.players.find(p => p.id === conn.peer);
+        if (!player || serverState.state !== 'PLAYING') return;
+
+        const isCorrect = player.character.trim().toLowerCase() === payload.guessedName.trim().toLowerCase();
+        if (isCorrect) {
+          player.hasGuessedCorrectly = true;
+          serverState.logs.push(`🎉 CHÍNH XÁC! ${player.name} đã tìm ra mình là "${player.character}"!`);
+          
+          if (serverState.players.every(p => p.hasGuessedCorrectly)) {
+            serverState.state = 'ENDED';
+            serverState.logs.push(`🏁 Tất cả người chơi đã đoán đúng! Trò chơi kết thúc.`);
+          }
+        } else {
+          serverState.logs.push(`❌ ${player.name} đoán là "${payload.guessedName}" nhưng KHÔNG ĐÚNG.`);
+        }
+
+        if (serverState.players[serverState.turnIndex].id === conn.peer && serverState.state === 'PLAYING') {
+          serverState.currentQuestion = null;
+          advanceHostTurn();
+        }
+        broadcastHostState();
+      }
+    }
+
+    function advanceHostTurn() {
+      let attempts = 0;
+      do {
+        serverState.turnIndex = (serverState.turnIndex + 1) % serverState.players.length;
+        attempts++;
+      } while (serverState.players[serverState.turnIndex].hasGuessedCorrectly && attempts < serverState.players.length);
+
+      serverState.logs.push(`👉 Tới lượt của [${serverState.players[serverState.turnIndex].name}].`);
+    }
+
+    function handlePlayerDisconnect(peerId) {
+      if (!serverState) return;
+      const leaving = serverState.players.find(p => p.id === peerId);
+      if (leaving) {
+        serverState.logs.push(`🚪 [${leaving.name}] đã rời phòng.`);
+      }
+      serverState.players = serverState.players.filter(p => p.id !== peerId);
+      connections = connections.filter(c => c.peer !== peerId);
+
+      if (serverState.turnIndex >= serverState.players.length) {
+        serverState.turnIndex = 0;
+      }
+      broadcastHostState();
+    }
+
+    function broadcastHostState() {
+      if (!serverState) return;
+
+      serverState.players.forEach(p => {
+        const personalizedState = {
+          roomCode: serverState.code,
+          hostId: serverState.hostId,
+          isHost: serverState.hostId === p.id,
+          state: serverState.state,
+          turnIndex: serverState.turnIndex,
+          activePlayerId: serverState.players[serverState.turnIndex]?.id,
+          currentQuestion: serverState.currentQuestion,
+          logs: serverState.logs,
+          players: serverState.players.map(other => ({
+            id: other.id,
+            name: other.name,
+            character: (other.id === p.id && !other.hasGuessedCorrectly && serverState.state !== 'ENDED')
+              ? '???'
+              : other.character,
+            isYou: other.id === p.id,
+            hasGuessedCorrectly: other.hasGuessedCorrectly
+          }))
+        };
+
+        if (p.id === myId) {
+          renderGameState(personalizedState);
+        } else {
+          const clientConn = connections.find(c => c.peer === p.id);
+          if (clientConn && clientConn.open) {
+            clientConn.send({ type: 'STATE_UPDATE', payload: personalizedState });
+          }
+        }
+      });
+    }
+
+    // ==========================================
+    // LOGIC DÀNH CHO THÀNH VIÊN (CLIENT ENGINE)
+    // ==========================================
+    function initClient(roomCode, playerName) {
+      myPeer = new Peer();
+
+      myPeer.on('open', (id) => {
+        myId = id;
+        isHost = false;
+        currentRoomCode = roomCode;
+
+        const hostPeerId = `whoami-${roomCode.toLowerCase()}`;
+        hostConnection = myPeer.connect(hostPeerId, { reliable: true });
+
+        hostConnection.on('open', () => {
+          hostConnection.send({
+            type: 'JOIN_REQUEST',
+            payload: { name: playerName }
+          });
+          enterLobbyUI(roomCode, false);
+        });
+
+        hostConnection.on('data', (data) => {
+          if (data.type === 'STATE_UPDATE') {
+            renderGameState(data.payload);
+          } else if (data.type === 'ERROR') {
+            showToast(data.message);
+          }
+        });
+
+        hostConnection.on('close', () => {
+          showToast('Phòng đã bị đóng bởi Chủ phòng!');
+          setTimeout(() => location.reload(), 2000);
+        });
+      });
+
+      myPeer.on('error', (err) => {
+        if (err.type === 'peer-unavailable') {
+          showToast('Không tìm thấy phòng với mã này! Hãy kiểm tra lại.');
+        } else {
+          showToast('Lỗi kết nối P2P: ' + err.type);
+        }
+      });
+    }
+
+    // ==========================================
+    // SỰ KIỆN GIAO DIỆN & TƯƠNG TÁC
+    // ==========================================
+    btnCreate.addEventListener('click', () => {
+      const name = inputName.value.trim();
+      if (!name) return showToast('Vui lòng nhập tên đại diện của bạn!');
+      myName = name;
+      const code = generateRoomCode();
+      initHost(code, name);
+    });
+
+    btnJoin.addEventListener('click', () => {
+      const name = inputName.value.trim();
+      const code = inputRoomCode.value.trim().toUpperCase();
+      if (!name) return showToast('Vui lòng nhập tên của bạn!');
+      if (!code) return showToast('Vui lòng nhập mã phòng (4 chữ)!');
+      myName = name;
+      initClient(code, name);
+    });
+
+    inputName.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        if (inputRoomCode.value.trim()) btnJoin.click();
+        else btnCreate.click();
+      }
+    });
+
+    inputRoomCode.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') btnJoin.click();
+    });
+
+    function enterLobbyUI(roomCode, amIHost) {
+      screenAuth.classList.add('hidden');
+      screenLobby.classList.remove('hidden');
+      lobbyRoomCode.textContent = roomCode;
+
+      if (amIHost) {
+        hostSettings.classList.remove('hidden');
+        btnStartGame.classList.remove('hidden');
+        waitHostMsg.classList.add('hidden');
+        badgeRole.textContent = '👑 Chủ phòng';
+        badgeRole.className = 'px-3.5 py-1 bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold rounded-full';
+      } else {
+        hostSettings.classList.add('hidden');
+        btnStartGame.classList.add('hidden');
+        waitHostMsg.classList.remove('hidden');
+        badgeRole.textContent = 'Thành viên';
+        badgeRole.className = 'px-3.5 py-1 bg-slate-800 border border-slate-700 text-slate-300 text-xs font-bold rounded-full';
+      }
+    }
+
+    // Host bấm Bắt đầu trận đấu
+    btnStartGame.addEventListener('click', () => {
+      if (!isHost || !serverState) return;
+      if (serverState.players.length < 2) {
+        return showToast('Cần ít nhất 2 người chơi để bắt đầu!');
+      }
+
+      let charPool = DEFAULT_CHARACTERS;
+      const customVal = inputCustomChars.value.trim();
+      if (customVal.length > 0) {
+        const parsed = customVal.split(',').map(s => s.trim()).filter(Boolean);
+        if (parsed.length >= serverState.players.length) {
+          charPool = parsed;
+        }
+      }
+
+      const shuffled = shuffle(charPool);
+      serverState.players.forEach((p, idx) => {
+        p.character = shuffled[idx % shuffled.length];
+        p.hasGuessedCorrectly = false;
+      });
+
+      serverState.state = 'PLAYING';
+      serverState.turnIndex = 0;
+      serverState.currentQuestion = null;
+      serverState.logs.push(`🎮 Trận đấu bắt đầu! Lượt đầu tiên: [${serverState.players[0].name}].`);
+
+      broadcastHostState();
+    });
+
+    // Host bấm Chơi lại ván mới
+    btnRestartGame.addEventListener('click', () => {
+      if (!isHost || !serverState) return;
+      serverState.state = 'LOBBY';
+      serverState.currentQuestion = null;
+      serverState.players.forEach(p => {
+        p.character = null;
+        p.hasGuessedCorrectly = false;
+      });
+      serverState.logs.push(`🔄 Chủ phòng đã đưa phòng về trạng thái chuẩn bị ván mới.`);
+      broadcastHostState();
+    });
+
+    // Gửi hành động
+    function sendAction(type, payload = {}) {
+      if (isHost) {
+        handleClientAction({ peer: myId }, { type, payload });
+      } else if (hostConnection && hostConnection.open) {
+        hostConnection.send({ type, payload });
+      }
+    }
+
+    btnSendQuestion.addEventListener('click', () => {
+      const q = inputQuestion.value.trim();
+      if (!q) return;
+      sendAction('ASK_QUESTION', { question: q });
+      inputQuestion.value = '';
+    });
+
+    inputQuestion.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') btnSendQuestion.click();
+    });
+
+    btnMakeGuess.addEventListener('click', () => {
+      const guess = inputGuessName.value.trim();
+      if (!guess) return;
+      sendAction('MAKE_GUESS', { guessedName: guess });
+      inputGuessName.value = '';
+    });
+
+    inputGuessName.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') btnMakeGuess.click();
+    });
+
+    btnSkipTurn.addEventListener('click', () => {
+      sendAction('NEXT_TURN');
+    });
+
+    window.voteAnswer = function(answer) {
+      sendAction('SUBMIT_ANSWER', { answer });
+    };
+
+    // ==========================================
+    // RENDER GIAO DIỆN CHUNG
+    // ==========================================
+    function renderGameState(data) {
+      currentRoomCode = data.roomCode;
+
+      if (data.state === 'LOBBY') {
+        screenAuth.classList.add('hidden');
+        screenLobby.classList.remove('hidden');
+        screenGame.classList.add('hidden');
+
+        lobbyPlayerCount.textContent = data.players.length;
+        lobbyPlayerList.innerHTML = data.players.map(p => `
+          <div class="bg-slate-950/70 border ${p.isYou ? 'border-amber-400 ring-1 ring-amber-400/30' : 'border-slate-800'} p-3.5 rounded-2xl text-center relative overflow-hidden">
+            ${p.id === data.hostId ? '<span class="absolute top-1.5 right-1.5 text-xs" title="Chủ phòng">👑</span>' : ''}
+            <div class="font-bold text-sm text-slate-200 truncate">${p.name} ${p.isYou ? '<span class="text-amber-400 text-xs font-normal">(Bạn)</span>' : ''}</div>
+            <span class="text-[10px] text-slate-500 font-medium">${p.id === data.hostId ? 'Chủ phòng' : 'Người chơi'}</span>
+          </div>
+        `).join('');
+      } else if (data.state === 'PLAYING' || data.state === 'ENDED') {
+        screenLobby.classList.add('hidden');
+        screenGame.classList.remove('hidden');
+
+        gameRoomCode.textContent = data.roomCode;
+        const activePlayer = data.players.find(p => p.id === data.activePlayerId);
+        const isMyTurn = data.activePlayerId === myId;
+
+        if (data.state === 'ENDED' && data.isHost) {
+          btnRestartGame.classList.remove('hidden');
+        } else {
+          btnRestartGame.classList.add('hidden');
+        }
+
+        if (data.state === 'ENDED') {
+          turnBanner.textContent = '🎉 Trò chơi đã kết thúc!';
+          turnBanner.className = 'text-xs sm:text-sm font-extrabold px-4 py-1.5 rounded-full bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20';
+        } else {
+          turnBanner.textContent = isMyTurn ? '👉 TỚI LƯỢT BẠN ĐẶT CÂU HỎI / ĐOÁN' : `Lượt của: ${activePlayer?.name || '...'}`;
+          turnBanner.className = `text-xs sm:text-sm font-bold px-4 py-1.5 rounded-full transition-all ${
+            isMyTurn
+              ? 'bg-amber-400 text-slate-950 font-black shadow-lg shadow-amber-400/30 animate-bounce'
+              : 'bg-slate-800 text-slate-300 border border-slate-700'
+          }`;
+        }
+
+        playersGrid.innerHTML = data.players.map(p => {
+          const isCurrentTurn = p.id === data.activePlayerId;
+          const isSelf = p.isYou;
+
+          let cardBorderClass = 'border-slate-800 bg-slate-900/80';
+          if (isCurrentTurn) {
+            cardBorderClass = 'border-amber-400 glow-active-turn bg-slate-900/90';
+          } else if (isSelf) {
+            cardBorderClass = 'border-indigo-500/60 bg-indigo-950/20';
+          }
+
+          return `
+            <div class="relative border-2 ${cardBorderClass} backdrop-blur-md rounded-2xl p-3.5 flex flex-col items-center text-center transition-all duration-300">
+              ${p.hasGuessedCorrectly ? '<span class="absolute -top-2.5 right-2 text-[11px] bg-emerald-500 text-slate-950 px-2.5 py-0.5 rounded-full font-black shadow-md">✓ Đã đoán đúng</span>' : ''}
+              ${p.id === data.hostId ? '<span class="absolute -top-2.5 left-2 text-xs" title="Chủ phòng">👑</span>' : ''}
+              
+              <span class="text-xs text-slate-300 mb-2 font-bold truncate w-full flex items-center justify-center gap-1">
+                ${p.name} ${isSelf ? '<span class="text-amber-400 font-medium text-[11px]">(Bạn)</span>' : ''}
+              </span>
+
+              <div class="w-full py-3.5 px-2 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-center min-h-[56px] shadow-inner">
+                <span class="font-black text-sm sm:text-base ${p.character === '???' ? 'text-amber-400 font-mono tracking-widest text-lg' : 'text-emerald-400'}">
+                  ${p.character}
+                </span>
+              </div>
+
+              <span class="text-[10px] text-slate-500 mt-1.5 font-medium">
+                ${p.character === '???' ? 'Mọi người đều thấy trừ bạn' : (p.hasGuessedCorrectly ? 'Đã tìm ra danh tính!' : 'Nhân vật được gán')}
+              </span>
+            </div>
+          `;
+        }).join('');
+
+        if (isMyTurn && data.state === 'PLAYING') {
+          panelMyTurn.classList.remove('hidden');
+        } else {
+          panelMyTurn.classList.add('hidden');
+        }
+
+        if (data.currentQuestion) {
+          currentQuestionText.textContent = `"${data.currentQuestion.text}" (bởi ${data.currentQuestion.askedBy})`;
+
+          if (!isMyTurn && data.state === 'PLAYING') {
+            votingButtons.classList.remove('hidden');
+          } else {
+            votingButtons.classList.add('hidden');
+          }
+
+          const answers = data.currentQuestion.answers || {};
+          const answerKeys = Object.keys(answers);
+          voteCounterBadge.textContent = `${answerKeys.length}/${data.players.length - 1} người đã trả lời`;
+
+          if (answerKeys.length > 0) {
+            voteResults.innerHTML = answerKeys.map(pId => {
+              const voter = data.players.find(p => p.id === pId);
+              const ans = answers[pId];
+              const badgeClass = ans === 'YES' 
+                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' 
+                : (ans === 'NO' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-slate-800 text-slate-300 border-slate-700');
+              const label = ans === 'YES' ? '👍 Có' : (ans === 'NO' ? '👎 Không' : '🤷 Không rõ');
+              return `<span class="px-2.5 py-1 rounded-xl border ${badgeClass} font-semibold">${voter?.name || '...'}: <b>${label}</b></span>`;
+            }).join('');
+          } else {
+            voteResults.innerHTML = '<span class="text-slate-500 italic">Đang chờ mọi người nhấn biểu quyết...</span>';
+          }
+        } else {
+          currentQuestionText.textContent = 'Chưa có câu hỏi nào trong lượt này...';
+          votingButtons.classList.add('hidden');
+          voteResults.innerHTML = '';
+          voteCounterBadge.textContent = '';
+        }
+
+        gameLogs.innerHTML = data.logs.map(log => `
+          <div class="py-1 px-2 rounded-lg bg-slate-950/40 border border-slate-800/60 leading-relaxed">
+            ${log}
+          </div>
+        `).join('');
+        gameLogs.scrollTop = gameLogs.scrollHeight;
+      }
+    }
+  </script>
+</body>
+</html>
