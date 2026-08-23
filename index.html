@@ -63,7 +63,7 @@
       <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-500 tracking-tight">
         ĐOÁN NHÂN VẬT
       </h1>
-      <p class="text-slate-400 text-sm mt-1.5 font-medium">Phiên bản Web tĩnh P2P - Tự động đồng bộ lượt</p>
+      <p class="text-slate-400 text-sm mt-1.5 font-medium">Phiên bản Web tĩnh P2P - Chuyển lượt tức thì</p>
     </div>
 
     <div class="space-y-4">
@@ -183,6 +183,13 @@
 
       <!-- Cột trái: Bảng điều khiển hành động & Biểu quyết -->
       <div class="md:col-span-2 flex flex-col gap-4">
+
+        <!-- Khung hiển thị kết quả lượt vừa xong -->
+        <div id="panel-last-result" class="bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-2xl p-4 shadow-lg hidden">
+          <span class="text-[11px] font-extrabold text-amber-400 uppercase tracking-wider block mb-1">📋 Kết quả câu hỏi lượt vừa rồi</span>
+          <p id="last-result-text" class="text-sm font-medium text-slate-200 italic mb-2"></p>
+          <div id="last-result-badges" class="flex flex-wrap gap-2 text-xs"></div>
+        </div>
 
         <!-- Bảng thao tác dành cho người đang có lượt -->
         <div id="panel-my-turn" class="bg-gradient-to-b from-amber-500/10 via-slate-900 to-slate-900 border-2 border-amber-400/80 rounded-3xl p-5 shadow-2xl hidden relative overflow-hidden">
@@ -310,6 +317,11 @@
     const turnBanner = document.getElementById('turn-banner');
     const btnRestartGame = document.getElementById('btn-restart-game');
     const playersGrid = document.getElementById('players-grid');
+    
+    const panelLastResult = document.getElementById('panel-last-result');
+    const lastResultText = document.getElementById('last-result-text');
+    const lastResultBadges = document.getElementById('last-result-badges');
+
     const panelMyTurn = document.getElementById('panel-my-turn');
     const inputQuestion = document.getElementById('input-question');
     const btnSendQuestion = document.getElementById('btn-send-question');
@@ -338,7 +350,6 @@
     // Quản lý kết nối chuẩn xác bằng Map
     const connectionsMap = new Map();
     let serverState = null;
-    let autoNextTurnTimeout = null;
 
     // Dành cho Client
     let hostConnection = null;
@@ -399,6 +410,7 @@
           state: 'LOBBY',
           turnIndex: 0,
           currentQuestion: null,
+          lastTurnResult: null,
           players: [
             {
               id: id,
@@ -462,8 +474,6 @@
         const activePlayer = serverState.players[serverState.turnIndex];
         if (activePlayer.id !== senderPeerId) return;
 
-        if (autoNextTurnTimeout) clearTimeout(autoNextTurnTimeout);
-
         serverState.currentQuestion = {
           text: payload.question,
           askedBy: activePlayer.name,
@@ -485,19 +495,27 @@
         const votersNeeded = serverState.players.filter(p => p.id !== activePlayer.id);
         const answeredKeys = Object.keys(serverState.currentQuestion.answers);
 
+        // NẾU ĐÃ ĐỦ CÂU TRẢ LỜI: LƯU KẾT QUẢ VÀ CHUYỂN LƯỢT TỨC THÌ (KHÔNG DÙNG SETTIMEOUT)
         if (answeredKeys.length >= votersNeeded.length && votersNeeded.length > 0) {
-          serverState.logs.push(`⏳ Đã đủ câu trả lời! Tự động chuyển lượt sau 2s...`);
-          broadcastHostState();
+          const summary = answeredKeys.map(id => {
+            const voter = serverState.players.find(p => p.id === id);
+            const ans = serverState.currentQuestion.answers[id];
+            const ansText = ans === 'YES' ? 'CÓ' : (ans === 'NO' ? 'KHÔNG' : 'KHÔNG RÕ');
+            return `${voter ? voter.name : 'Người chơi'}: ${ansText}`;
+          }).join(', ');
 
-          // Chuyển lượt sau 2 giây
-          if (autoNextTurnTimeout) clearTimeout(autoNextTurnTimeout);
-          autoNextTurnTimeout = setTimeout(() => {
-            if (serverState && serverState.state === 'PLAYING') {
-              serverState.currentQuestion = null;
-              advanceHostTurn();
-              broadcastHostState();
-            }
-          }, 2000);
+          serverState.logs.push(`📊 Kết quả câu hỏi của ${activePlayer.name}: [${summary}]`);
+          
+          serverState.lastTurnResult = {
+            askedBy: activePlayer.name,
+            question: serverState.currentQuestion.text,
+            answers: { ...serverState.currentQuestion.answers }
+          };
+
+          // Chuyển lượt sang người tiếp theo ngay lập tức
+          serverState.currentQuestion = null;
+          advanceHostTurn();
+          broadcastHostState();
           return;
         }
 
@@ -507,7 +525,6 @@
       if (type === 'NEXT_TURN') {
         const activePlayer = serverState.players[serverState.turnIndex];
         if (activePlayer.id === senderPeerId || serverState.hostId === senderPeerId) {
-          if (autoNextTurnTimeout) clearTimeout(autoNextTurnTimeout);
           serverState.currentQuestion = null;
           advanceHostTurn();
           broadcastHostState();
@@ -517,8 +534,6 @@
       if (type === 'MAKE_GUESS') {
         const player = serverState.players.find(p => p.id === senderPeerId);
         if (!player || serverState.state !== 'PLAYING') return;
-
-        if (autoNextTurnTimeout) clearTimeout(autoNextTurnTimeout);
 
         const isCorrect = player.character.trim().toLowerCase() === payload.guessedName.trim().toLowerCase();
         if (isCorrect) {
@@ -543,17 +558,20 @@
 
     function advanceHostTurn() {
       let attempts = 0;
+      const totalPlayers = serverState.players.length;
       do {
-        serverState.turnIndex = (serverState.turnIndex + 1) % serverState.players.length;
+        serverState.turnIndex = (serverState.turnIndex + 1) % totalPlayers;
         attempts++;
-      } while (serverState.players[serverState.turnIndex].hasGuessedCorrectly && attempts < serverState.players.length);
+      } while (serverState.players[serverState.turnIndex].hasGuessedCorrectly && attempts < totalPlayers);
 
-      serverState.logs.push(`👉 Tới lượt của [${serverState.players[serverState.turnIndex].name}].`);
+      const nextPlayer = serverState.players[serverState.turnIndex];
+      if (nextPlayer) {
+        serverState.logs.push(`👉 Tới lượt của [${nextPlayer.name}].`);
+      }
     }
 
     function handlePlayerDisconnect(peerId) {
       if (!serverState) return;
-      if (autoNextTurnTimeout) clearTimeout(autoNextTurnTimeout);
 
       const leaving = serverState.players.find(p => p.id === peerId);
       if (leaving) {
@@ -579,6 +597,7 @@
           turnIndex: serverState.turnIndex,
           activePlayerId: serverState.players[serverState.turnIndex]?.id,
           currentQuestion: serverState.currentQuestion,
+          lastTurnResult: serverState.lastTurnResult,
           logs: serverState.logs,
           players: serverState.players.map(other => ({
             id: other.id,
@@ -722,6 +741,7 @@
       serverState.state = 'PLAYING';
       serverState.turnIndex = 0;
       serverState.currentQuestion = null;
+      serverState.lastTurnResult = null;
       serverState.logs.push(`🎮 Trận đấu bắt đầu! Lượt đầu tiên: [${serverState.players[0].name}].`);
 
       broadcastHostState();
@@ -729,9 +749,9 @@
 
     btnRestartGame.addEventListener('click', () => {
       if (!isHost || !serverState) return;
-      if (autoNextTurnTimeout) clearTimeout(autoNextTurnTimeout);
       serverState.state = 'LOBBY';
       serverState.currentQuestion = null;
+      serverState.lastTurnResult = null;
       serverState.players.forEach(p => {
         p.character = null;
         p.hasGuessedCorrectly = false;
@@ -843,6 +863,7 @@
           }`;
         }
 
+        // Render thẻ nhân vật
         playersGrid.innerHTML = data.players.map(p => {
           const isCurrentTurn = p.id === data.activePlayerId;
           const isSelf = p.isYou;
@@ -876,14 +897,35 @@
           `;
         }).join('');
 
+        // Khung Kết quả lượt vừa rồi
+        if (data.lastTurnResult) {
+          panelLastResult.classList.remove('hidden');
+          lastResultText.textContent = `"${data.lastTurnResult.question}" (bởi ${data.lastTurnResult.askedBy})`;
+          
+          const answers = data.lastTurnResult.answers || {};
+          const answerKeys = Object.keys(answers);
+          lastResultBadges.innerHTML = answerKeys.map(pId => {
+            const voter = data.players.find(p => p.id === pId);
+            const ans = answers[pId];
+            const badgeClass = ans === 'YES' 
+              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' 
+              : (ans === 'NO' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-slate-800 text-slate-300 border-slate-700');
+            const label = ans === 'YES' ? '👍 Có' : (ans === 'NO' ? '👎 Không' : '🤷 Không rõ');
+            return `<span class="px-2.5 py-1 rounded-xl border ${badgeClass} font-semibold">${voter?.name || '...'}: <b>${label}</b></span>`;
+          }).join('');
+        } else {
+          panelLastResult.classList.add('hidden');
+        }
+
+        // Điều khiển bảng Đặt câu hỏi
         if (isMyTurn && data.state === 'PLAYING') {
           panelMyTurn.classList.remove('hidden');
         } else {
           panelMyTurn.classList.add('hidden');
         }
 
+        // Điều khiển bảng Biểu quyết
         if (data.currentQuestion) {
-          // Reset trạng thái khóa nút khi có câu hỏi mới
           if (data.currentQuestion.text !== lastRenderedQuestionText) {
             lastRenderedQuestionText = data.currentQuestion.text;
             hasVotedCurrentQuestion = false;
@@ -901,11 +943,8 @@
           const answers = data.currentQuestion.answers || {};
           const answerKeys = Object.keys(answers);
           const totalVoters = data.players.length - 1;
-          const isFinishedVoting = answerKeys.length >= totalVoters && totalVoters > 0;
 
-          voteCounterBadge.innerHTML = isFinishedVoting 
-            ? `<span class="text-amber-400 font-bold animate-pulse">⏳ Đã đủ câu trả lời! Đang chuyển lượt...</span>`
-            : `${answerKeys.length}/${totalVoters} người đã trả lời`;
+          voteCounterBadge.textContent = `${answerKeys.length}/${totalVoters} người đã trả lời`;
 
           if (answerKeys.length > 0) {
             voteResults.innerHTML = answerKeys.map(pId => {
@@ -930,6 +969,7 @@
           voteCounterBadge.textContent = '';
         }
 
+        // Logs
         gameLogs.innerHTML = data.logs.map(log => `
           <div class="py-1 px-2 rounded-lg bg-slate-950/40 border border-slate-800/60 leading-relaxed">
             ${log}
