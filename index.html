@@ -122,7 +122,7 @@
       <div class="flex items-center justify-between mb-3">
         <div>
           <h4 class="text-xs font-extrabold uppercase tracking-wider text-amber-400">Kho nhân vật vĩnh viễn</h4>
-          <p class="text-[11px] text-slate-400">Tự động lưu vào trình duyệt, không cần chỉnh sửa code.</p>
+          <p class="text-[11px] text-slate-400">Tự động nạp từ máy hoặc đồng bộ Google Sheet.</p>
         </div>
         <button id="btn-open-char-modal" class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition flex items-center gap-1">
           <span>⚙️ Quản lý kho</span>
@@ -131,8 +131,8 @@
       </div>
 
       <div class="text-[11px] text-slate-400 bg-slate-900 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between">
-        <span>Ván đấu sẽ ngẫu nhiên lấy từ kho nhân vật này.</span>
-        <button id="btn-quick-view-chars" class="text-indigo-400 hover:text-indigo-300 font-bold underline">Xem nhanh</button>
+        <span>Game sẽ bốc ngẫu nhiên nhân vật từ kho này.</span>
+        <button id="btn-quick-view-chars" class="text-indigo-400 hover:text-indigo-300 font-bold underline">Xem / Thêm nhân vật</button>
       </div>
     </div>
 
@@ -196,7 +196,7 @@
               <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
               <span class="text-xs font-extrabold text-amber-400 uppercase tracking-wider">Đang là lượt của bạn</span>
             </div>
-            <span class="text-xs text-slate-400 font-medium">Hỏi Có/Không hoặc chốt tên</span>
+            <span class="text-xs text-slate-400 font-medium">Hỏi Có/Không hoặc đoán tên nhân vật</span>
           </div>
 
           <div class="space-y-3">
@@ -208,10 +208,10 @@
             </div>
 
             <div class="flex flex-wrap sm:flex-nowrap items-center gap-2">
-              <input id="input-guess-name" type="text" placeholder="Đoán tên: Tôi là ai?..." class="flex-grow bg-slate-950 border border-slate-700/80 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 text-slate-100 placeholder-slate-500">
+              <input id="input-guess-name" type="text" placeholder="Tôi đoán tôi là ai? (Ví dụ: Đôrêmon, Sơn Tùng)..." class="flex-grow bg-slate-950 border border-slate-700/80 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 text-slate-100 placeholder-slate-500">
               <div class="flex gap-2 w-full sm:w-auto">
                 <button id="btn-make-guess" class="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-5 py-3 rounded-2xl text-sm transition shadow-lg shadow-emerald-600/20 active:scale-95 flex-shrink-0">
-                  Chốt tên!
+                  Chốt đoán!
                 </button>
                 <button id="btn-skip-turn" class="flex-1 sm:flex-initial bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-3 rounded-2xl text-sm transition active:scale-95 border border-slate-700 flex-shrink-0">
                   Bỏ lượt
@@ -225,16 +225,24 @@
         <div id="panel-vote" class="bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-3xl p-5 shadow-xl flex-grow flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-2">
-              <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Câu hỏi trên bàn</span>
+              <span id="vote-panel-title" class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Câu hỏi trên bàn</span>
               <span id="vote-counter-badge" class="text-[11px] font-semibold text-slate-400"></span>
             </div>
-            <div class="min-h-[60px] flex items-center bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80 mb-4">
+            
+            <div id="vote-content-container" class="min-h-[60px] flex flex-col justify-center bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80 mb-4">
               <p id="current-question-text" class="text-base sm:text-lg font-medium text-slate-200 italic">Chưa có câu hỏi nào trong lượt này...</p>
+              
+              <!-- Khung bổ sung khi đang biểu quyết Đoán Tên Nhân Vật -->
+              <div id="guess-verify-extra" class="hidden mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
+                <span class="text-slate-400">Nhân vật thật trên đầu họ:</span>
+                <span id="guess-real-char-name" class="font-extrabold text-amber-400 text-sm px-2.5 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/20"></span>
+              </div>
             </div>
           </div>
 
           <div>
-            <div id="voting-buttons" class="grid grid-cols-3 gap-2.5 hidden">
+            <!-- Bộ nút biểu quyết YES / NO / UNKNOWN thông thường -->
+            <div id="voting-buttons-regular" class="grid grid-cols-3 gap-2.5 hidden">
               <button id="btn-vote-yes" onclick="selectVoteOption('YES')" class="vote-opt-btn bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-black py-3.5 rounded-2xl transition active:scale-95 text-sm sm:text-base tracking-wide">
                 CÓ
               </button>
@@ -246,7 +254,17 @@
               </button>
             </div>
 
-            <!-- Thanh xác nhận trước khi gửi -->
+            <!-- Bộ nút biểu quyết ĐÚNG / SAI khi có người đoán tên -->
+            <div id="voting-buttons-guess" class="grid grid-cols-2 gap-3 hidden">
+              <button id="btn-guess-correct" onclick="selectVoteOption('CORRECT')" class="vote-opt-btn bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border-2 border-emerald-500/50 font-black py-3.5 rounded-2xl transition active:scale-95 text-base tracking-wide flex items-center justify-center gap-2">
+                <span>✓</span> ĐÚNG RỒI
+              </button>
+              <button id="btn-guess-wrong" onclick="selectVoteOption('WRONG')" class="vote-opt-btn bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border-2 border-rose-500/50 font-black py-3.5 rounded-2xl transition active:scale-95 text-base tracking-wide flex items-center justify-center gap-2">
+                <span>✗</span> SAI RỒI
+              </button>
+            </div>
+
+            <!-- Thanh xác nhận trước khi gửi biểu quyết -->
             <div id="panel-vote-confirm" class="hidden mt-3 p-3 bg-slate-950/90 border border-amber-500/40 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-lg">
               <div class="text-xs">
                 <span class="text-slate-400">Bạn đã chọn:</span>
@@ -283,22 +301,34 @@
     </div>
   </div>
 
-  <!-- MODAL: QUẢN LÝ KHO NHÂN VẬT VĨNH VIỄN -->
+  <!-- MODAL: QUẢN LÝ KHO NHÂN VẬT & ĐỒNG BỘ GOOGLE SHEET -->
   <div id="modal-char-manager" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col max-h-[85vh]">
       <div class="flex justify-between items-center pb-4 border-b border-slate-800 mb-4">
         <div>
-          <h3 class="text-lg font-black text-amber-400">📦 KHO NHÂN VẬT VĨNH VIỄN</h3>
-          <p class="text-xs text-slate-400">Lưu trực tiếp trên máy của bạn, tự động nạp mỗi khi tạo phòng.</p>
+          <h3 class="text-lg font-black text-amber-400">📦 KHO NHÂN VẬT</h3>
+          <p class="text-xs text-slate-400">Thêm thủ công hoặc đồng bộ trực tiếp từ Google Sheet.</p>
         </div>
         <button id="btn-close-char-modal" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition">✕</button>
       </div>
 
-      <!-- Ô nhập thêm tên nhân vật -->
-      <div class="space-y-3 mb-4">
+      <!-- Phần 1: Đồng bộ từ Google Sheets -->
+      <div class="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 mb-3">
+        <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1.5">🔗 Đồng bộ nhanh từ Google Sheet công khai</label>
         <div class="flex gap-2">
-          <input id="input-add-char" type="text" placeholder="Nhập tên nhân vật (hoặc nhiều tên cách nhau bằng dấu phẩy)..." class="flex-grow bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-400 text-slate-100 placeholder-slate-500">
-          <button id="btn-add-char" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-sm transition flex-shrink-0">
+          <input id="input-sheet-url" type="text" placeholder="Dán link Google Sheet (Cột A là tên nhân vật)..." class="flex-grow bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+          <button id="btn-sync-sheet" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-2 rounded-xl text-xs transition flex-shrink-0 flex items-center gap-1">
+            <span>Tải về</span>
+          </button>
+        </div>
+        <p class="text-[10px] text-slate-500 mt-1">Lưu ý: Sheet cần bật quyền chia sẻ <i>"Bất kỳ ai có đường liên kết đều có thể xem"</i>.</p>
+      </div>
+
+      <!-- Phần 2: Thêm thủ công -->
+      <div class="space-y-2 mb-3">
+        <div class="flex gap-2">
+          <input id="input-add-char" type="text" placeholder="Hoặc nhập tên nhân vật (cách nhau bằng dấu phẩy)..." class="flex-grow bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-amber-400 text-slate-100 placeholder-slate-500">
+          <button id="btn-add-char" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs transition flex-shrink-0">
             Thêm
           </button>
         </div>
@@ -306,17 +336,17 @@
         <div class="flex items-center justify-between text-xs text-slate-400 pt-1">
           <span>Tổng số nhân vật: <b id="modal-total-chars" class="text-amber-400">0</b></span>
           <div class="flex gap-2">
-            <button id="btn-export-chars" class="hover:text-slate-200 underline">Sao chép tất cả</button>
+            <button id="btn-export-chars" class="hover:text-slate-200 underline">Copy tất cả</button>
             <span>•</span>
-            <button id="btn-reset-default-chars" class="text-rose-400 hover:text-rose-300 underline">Khôi phục mặc định</button>
+            <button id="btn-reset-default-chars" class="text-rose-400 hover:text-rose-300 underline">Khôi phục gốc</button>
           </div>
         </div>
       </div>
 
       <!-- Danh sách nhân vật cuộn -->
-      <div id="modal-char-tags" class="flex-grow overflow-y-auto p-3 bg-slate-950/70 border border-slate-800 rounded-2xl flex flex-wrap gap-2 content-start custom-scrollbar min-h-[180px]"></div>
+      <div id="modal-char-tags" class="flex-grow overflow-y-auto p-3 bg-slate-950/70 border border-slate-800 rounded-2xl flex flex-wrap gap-2 content-start custom-scrollbar min-h-[140px]"></div>
 
-      <div class="pt-4 mt-4 border-t border-slate-800 flex justify-end">
+      <div class="pt-4 mt-3 border-t border-slate-800 flex justify-end">
         <button id="btn-save-char-modal" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition">
           Xong & Lưu lại
         </button>
@@ -341,7 +371,6 @@
       'Cristiano Ronaldo', 'Lionel Messi', 'Sơn Tùng M-TP'
     ];
 
-    // Quản lý kho nhân vật vĩnh viễn (LocalStorage)
     const STORAGE_KEY = 'whoami_custom_character_vault';
     let currentCharacterPool = [];
 
@@ -395,6 +424,8 @@
     const modalCharManager = document.getElementById('modal-char-manager');
     const btnCloseCharModal = document.getElementById('btn-close-char-modal');
     const btnSaveCharModal = document.getElementById('btn-save-char-modal');
+    const inputSheetUrl = document.getElementById('input-sheet-url');
+    const btnSyncSheet = document.getElementById('btn-sync-sheet');
     const inputAddChar = document.getElementById('input-add-char');
     const btnAddChar = document.getElementById('btn-add-char');
     const modalTotalChars = document.getElementById('modal-total-chars');
@@ -418,12 +449,21 @@
     const inputGuessName = document.getElementById('input-guess-name');
     const btnMakeGuess = document.getElementById('btn-make-guess');
     const btnSkipTurn = document.getElementById('btn-skip-turn');
-    const currentQuestionText = document.getElementById('current-question-text');
     
-    const votingButtons = document.getElementById('voting-buttons');
+    const votePanelTitle = document.getElementById('vote-panel-title');
+    const currentQuestionText = document.getElementById('current-question-text');
+    const guessVerifyExtra = document.getElementById('guess-verify-extra');
+    const guessRealCharName = document.getElementById('guess-real-char-name');
+    
+    const votingButtonsRegular = document.getElementById('voting-buttons-regular');
     const btnVoteYes = document.getElementById('btn-vote-yes');
     const btnVoteNo = document.getElementById('btn-vote-no');
     const btnVoteUnknown = document.getElementById('btn-vote-unknown');
+
+    const votingButtonsGuess = document.getElementById('voting-buttons-guess');
+    const btnGuessCorrect = document.getElementById('btn-guess-correct');
+    const btnGuessWrong = document.getElementById('btn-guess-wrong');
+
     const panelVoteConfirm = document.getElementById('panel-vote-confirm');
     const pendingVoteLabel = document.getElementById('pending-vote-label');
     const btnCancelVote = document.getElementById('btn-cancel-vote');
@@ -487,7 +527,7 @@
     }
 
     // ==========================================
-    // LOGIC QUẢN LÝ KHO NHÂN VẬT MODAL
+    // LOGIC ĐỒNG BỘ GOOGLE SHEETS & QUẢN LÝ KHO
     // ==========================================
     function updateCharacterVaultUI() {
       badgeCharCount.textContent = currentCharacterPool.length;
@@ -526,11 +566,56 @@
       inputAddChar.value = '';
       if (addedCount > 0) {
         saveCharacterPool();
-        showToast(`Đã thêm ${addedCount} nhân vật vào kho vĩnh viễn!`);
+        showToast(`Đã thêm ${addedCount} nhân vật vào kho!`);
       } else {
-        showToast('Tên nhân vật này đã có sẵn trong kho.');
+        showToast('Tên nhân vật này đã có sẵn.');
       }
     }
+
+    // Đọc Google Sheet công khai qua CSV Endpoint
+    btnSyncSheet.addEventListener('click', async () => {
+      const url = inputSheetUrl.value.trim();
+      if (!url) return showToast('Vui lòng dán liên kết Google Sheet!');
+
+      const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+      if (!match) {
+        return showToast('Link Google Sheet không đúng định dạng!');
+      }
+
+      const sheetId = match[1];
+      const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
+
+      showToast('Đang tải dữ liệu từ Google Sheet...');
+
+      try {
+        const response = await fetch(csvUrl);
+        if (!response.ok) throw new Error('Không thể tải');
+        const text = await response.text();
+
+        // Tách dòng CSV và làm sạch ký tự ngoặc kép
+        const lines = text.split('\n')
+          .map(l => l.replace(/^"|"$/g, '').replace(/""/g, '"').trim())
+          .filter(l => l && !l.toLowerCase().startsWith('tên') && !l.toLowerCase().startsWith('name') && !l.toLowerCase().startsWith('nhân vật'));
+
+        if (lines.length === 0) {
+          return showToast('Không tìm thấy danh sách tên nhân vật trong bảng tính!');
+        }
+
+        let addedCount = 0;
+        lines.forEach(name => {
+          if (name.length > 0 && !currentCharacterPool.some(c => c.toLowerCase() === name.toLowerCase())) {
+            currentCharacterPool.push(name);
+            addedCount++;
+          }
+        });
+
+        saveCharacterPool();
+        inputSheetUrl.value = '';
+        showToast(`Đã đồng bộ thành công ${lines.length} nhân vật từ Google Sheet!`);
+      } catch (err) {
+        showToast('Lỗi: Hãy chắc chắn Google Sheet đã bật "Bất kỳ ai có đường liên kết đều xem được"!');
+      }
+    });
 
     btnAddChar.addEventListener('click', addCharactersFromInput);
     inputAddChar.addEventListener('keydown', (e) => {
@@ -558,12 +643,12 @@
     btnExportChars.addEventListener('click', () => {
       const listStr = currentCharacterPool.join(', ');
       navigator.clipboard.writeText(listStr).then(() => {
-        showToast('Đã sao chép toàn bộ danh sách nhân vật vào Clipboard!');
+        showToast('Đã sao chép danh sách nhân vật vào Clipboard!');
       });
     });
 
     btnResetDefaultChars.addEventListener('click', () => {
-      if (confirm('Bạn có chắc chắn muốn khôi phục lại kho nhân vật mặc định ban đầu không?')) {
+      if (confirm('Khôi phục lại kho nhân vật mặc định ban đầu?')) {
         currentCharacterPool = [...DEFAULT_CHARACTERS];
         saveCharacterPool();
         showToast('Đã khôi phục kho nhân vật gốc.');
@@ -587,7 +672,7 @@
           hostId: id,
           state: 'LOBBY',
           turnIndex: 0,
-          currentQuestion: null,
+          currentQuestion: null, // Lưu câu hỏi hoặc câu đoán tên
           lastTurnResult: null,
           players: [
             {
@@ -650,19 +735,41 @@
         broadcastHostState();
       }
 
+      // Người có lượt đặt câu hỏi Có/Không
       if (type === 'ASK_QUESTION') {
         const activePlayer = serverState.players[serverState.turnIndex];
         if (activePlayer.id !== senderPeerId) return;
 
         serverState.currentQuestion = {
+          type: 'QUESTION', // 'QUESTION' | 'GUESS'
           text: payload.question,
           askedBy: activePlayer.name,
+          askedById: activePlayer.id,
+          actualCharacter: activePlayer.character,
           answers: {}
         };
         serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-indigo-900/60 text-indigo-300 text-[10px] font-bold mr-1">HỎI</span> <b class="text-amber-400">${activePlayer.name}</b>: "${payload.question}"`);
         broadcastHostState();
       }
 
+      // Người có lượt chốt đoán tên -> Mở biểu quyết cho mọi người
+      if (type === 'MAKE_GUESS') {
+        const activePlayer = serverState.players[serverState.turnIndex];
+        if (activePlayer.id !== senderPeerId || serverState.state !== 'PLAYING') return;
+
+        serverState.currentQuestion = {
+          type: 'GUESS',
+          text: payload.guessedName,
+          askedBy: activePlayer.name,
+          askedById: activePlayer.id,
+          actualCharacter: activePlayer.character,
+          answers: {}
+        };
+        serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-extrabold mr-1">ĐOÁN TÊN</span> <b class="text-amber-400">${activePlayer.name}</b> đoán mình là: <b class="text-white">"${payload.guessedName}"</b>!`);
+        broadcastHostState();
+      }
+
+      // Ghi nhận biểu quyết từ những người khác
       if (type === 'SUBMIT_ANSWER') {
         if (!serverState.currentQuestion) return;
         const activePlayer = serverState.players[serverState.turnIndex];
@@ -673,22 +780,52 @@
         const votersNeeded = serverState.players.filter(p => p.id !== activePlayer.id);
         const answeredKeys = Object.keys(serverState.currentQuestion.answers);
 
-        // Đã đủ câu trả lời: Lưu kết quả và chuyển lượt ngay lập tức
+        // Khi đã đủ toàn bộ phiếu biểu quyết
         if (answeredKeys.length >= votersNeeded.length && votersNeeded.length > 0) {
-          const summary = answeredKeys.map(id => {
-            const voter = serverState.players.find(p => p.id === id);
-            const ans = serverState.currentQuestion.answers[id];
-            const ansText = ans === 'YES' ? '<b class="text-emerald-400">CÓ</b>' : (ans === 'NO' ? '<b class="text-rose-400">KHÔNG</b>' : '<b class="text-slate-400">KHÔNG RÕ</b>');
-            return `${voter ? voter.name : 'Người chơi'}: ${ansText}`;
-          }).join(', ');
-
-          serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-bold mr-1">KẾT QUẢ</span> <b class="text-amber-400">${activePlayer.name}</b> [${summary}]`);
           
-          serverState.lastTurnResult = {
-            askedBy: activePlayer.name,
-            question: serverState.currentQuestion.text,
-            answers: { ...serverState.currentQuestion.answers }
-          };
+          if (serverState.currentQuestion.type === 'GUESS') {
+            // Xử lý kết quả đoán nhân vật
+            const correctVotes = answeredKeys.filter(id => serverState.currentQuestion.answers[id] === 'CORRECT').length;
+            const wrongVotes = answeredKeys.filter(id => serverState.currentQuestion.answers[id] === 'WRONG').length;
+            const isGuessedRight = correctVotes >= wrongVotes && correctVotes > 0;
+
+            if (isGuessedRight) {
+              activePlayer.hasGuessedCorrectly = true;
+              serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-emerald-900/80 text-emerald-300 text-[10px] font-bold mr-1">CHÍNH XÁC</span> Mọi người xác nhận <b class="text-amber-400">${activePlayer.name}</b> đã đoán đúng nhân vật <b class="text-emerald-300">"${activePlayer.character}"</b>!`);
+              
+              if (serverState.players.every(p => p.hasGuessedCorrectly)) {
+                serverState.state = 'ENDED';
+                serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 text-[10px] font-extrabold mr-1">KẾT THÚC</span> Tất cả người chơi đã hoàn thành ván đấu.`);
+              }
+            } else {
+              serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-rose-900/80 text-rose-300 text-[10px] font-bold mr-1">CHƯA ĐÚNG</span> Mọi người xác nhận câu đoán "${serverState.currentQuestion.text}" chưa chính xác.`);
+            }
+
+            serverState.lastTurnResult = {
+              type: 'GUESS',
+              askedBy: activePlayer.name,
+              question: `Đoán: "${serverState.currentQuestion.text}" (Nhân vật thật: ${activePlayer.character})`,
+              answers: { ...serverState.currentQuestion.answers }
+            };
+
+          } else {
+            // Xử lý câu hỏi Có/Không bình thường
+            const summary = answeredKeys.map(id => {
+              const voter = serverState.players.find(p => p.id === id);
+              const ans = serverState.currentQuestion.answers[id];
+              const ansText = ans === 'YES' ? '<b class="text-emerald-400">CÓ</b>' : (ans === 'NO' ? '<b class="text-rose-400">KHÔNG</b>' : '<b class="text-slate-400">KHÔNG RÕ</b>');
+              return `${voter ? voter.name : 'Người chơi'}: ${ansText}`;
+            }).join(', ');
+
+            serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-bold mr-1">KẾT QUẢ</span> <b class="text-amber-400">${activePlayer.name}</b> [${summary}]`);
+            
+            serverState.lastTurnResult = {
+              type: 'QUESTION',
+              askedBy: activePlayer.name,
+              question: serverState.currentQuestion.text,
+              answers: { ...serverState.currentQuestion.answers }
+            };
+          }
 
           serverState.currentQuestion = null;
           advanceHostTurn();
@@ -707,30 +844,6 @@
           broadcastHostState();
         }
       }
-
-      if (type === 'MAKE_GUESS') {
-        const player = serverState.players.find(p => p.id === senderPeerId);
-        if (!player || serverState.state !== 'PLAYING') return;
-
-        const isCorrect = player.character.trim().toLowerCase() === payload.guessedName.trim().toLowerCase();
-        if (isCorrect) {
-          player.hasGuessedCorrectly = true;
-          serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-emerald-900/80 text-emerald-300 text-[10px] font-bold mr-1">CHÍNH XÁC</span> <b class="text-amber-400">${player.name}</b> đã tìm ra mình là <b class="text-emerald-300">"${player.character}"</b>!`);
-          
-          if (serverState.players.every(p => p.hasGuessedCorrectly)) {
-            serverState.state = 'ENDED';
-            serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 text-[10px] font-extrabold mr-1">KẾT THÚC</span> Tất cả người chơi đã hoàn thành ván đấu.`);
-          }
-        } else {
-          serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-rose-900/80 text-rose-300 text-[10px] font-bold mr-1">CHƯA ĐÚNG</span> <b class="text-amber-400">${player.name}</b> đoán là "${payload.guessedName}".`);
-        }
-
-        if (serverState.players[serverState.turnIndex].id === senderPeerId && serverState.state === 'PLAYING') {
-          serverState.currentQuestion = null;
-          advanceHostTurn();
-        }
-        broadcastHostState();
-      }
     }
 
     function advanceHostTurn() {
@@ -742,7 +855,7 @@
       } while (serverState.players[serverState.turnIndex].hasGuessedCorrectly && attempts < totalPlayers);
 
       const nextPlayer = serverState.players[serverState.turnIndex];
-      if (nextPlayer) {
+      if (nextPlayer && serverState.state === 'PLAYING') {
         serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold mr-1">LƯỢT MỚI</span> Chuyển tới lượt của <b class="text-amber-400">${nextPlayer.name}</b>.`);
       }
     }
@@ -773,7 +886,13 @@
           state: serverState.state,
           turnIndex: serverState.turnIndex,
           activePlayerId: serverState.players[serverState.turnIndex]?.id,
-          currentQuestion: serverState.currentQuestion,
+          currentQuestion: serverState.currentQuestion ? {
+            ...serverState.currentQuestion,
+            // Ẩn tên thật với chính người đang hỏi/đoán
+            actualCharacter: (serverState.currentQuestion.askedById === p.id && !p.hasGuessedCorrectly)
+              ? '???'
+              : serverState.currentQuestion.actualCharacter
+          } : null,
           lastTurnResult: serverState.lastTurnResult,
           logs: serverState.logs,
           players: serverState.players.map(other => ({
@@ -955,7 +1074,7 @@
 
     btnMakeGuess.addEventListener('click', () => {
       const guess = inputGuessName.value.trim();
-      if (!guess) return;
+      if (!guess) return showToast('Vui lòng nhập tên nhân vật bạn muốn đoán!');
       sendAction('MAKE_GUESS', { guessedName: guess });
       inputGuessName.value = '';
     });
@@ -969,26 +1088,29 @@
     });
 
     // ==========================================
-    // QUY TRÌNH BIỂU QUYẾT 2 BƯỚC
+    // QUY TRÌNH BIỂU QUYẾT 2 BƯỚC (HỎI & ĐOÁN TÊN)
     // ==========================================
     window.selectVoteOption = function(answer) {
       if (hasVotedCurrentQuestion) return;
       selectedVoteOption = answer;
 
-      btnVoteYes.classList.remove('ring-2', 'ring-emerald-400', 'bg-emerald-500/30');
-      btnVoteNo.classList.remove('ring-2', 'ring-rose-400', 'bg-rose-500/30');
-      btnVoteUnknown.classList.remove('ring-2', 'ring-slate-300', 'bg-slate-700');
+      // Xóa highlight
+      document.querySelectorAll('.vote-opt-btn').forEach(btn => {
+        btn.classList.remove('ring-2', 'ring-amber-400', 'ring-emerald-400', 'ring-rose-400', 'bg-slate-700');
+      });
 
-      if (answer === 'YES') {
-        btnVoteYes.classList.add('ring-2', 'ring-emerald-400', 'bg-emerald-500/30');
-        pendingVoteLabel.textContent = 'CÓ';
+      if (answer === 'YES' || answer === 'CORRECT') {
+        const btn = document.getElementById(answer === 'YES' ? 'btn-vote-yes' : 'btn-guess-correct');
+        if (btn) btn.classList.add('ring-2', 'ring-emerald-400');
+        pendingVoteLabel.textContent = answer === 'YES' ? 'CÓ' : 'ĐÚNG RỒI';
         pendingVoteLabel.className = 'font-black text-sm ml-1 text-emerald-400';
-      } else if (answer === 'NO') {
-        btnVoteNo.classList.add('ring-2', 'ring-rose-400', 'bg-rose-500/30');
-        pendingVoteLabel.textContent = 'KHÔNG';
+      } else if (answer === 'NO' || answer === 'WRONG') {
+        const btn = document.getElementById(answer === 'NO' ? 'btn-vote-no' : 'btn-guess-wrong');
+        if (btn) btn.classList.add('ring-2', 'ring-rose-400');
+        pendingVoteLabel.textContent = answer === 'NO' ? 'KHÔNG' : 'SAI RỒI';
         pendingVoteLabel.className = 'font-black text-sm ml-1 text-rose-400';
       } else {
-        btnVoteUnknown.classList.add('ring-2', 'ring-slate-300', 'bg-slate-700');
+        btnVoteUnknown.classList.add('ring-2', 'ring-amber-400');
         pendingVoteLabel.textContent = 'KHÔNG RÕ';
         pendingVoteLabel.className = 'font-black text-sm ml-1 text-slate-300';
       }
@@ -998,9 +1120,9 @@
 
     btnCancelVote.addEventListener('click', () => {
       selectedVoteOption = null;
-      btnVoteYes.classList.remove('ring-2', 'ring-emerald-400', 'bg-emerald-500/30');
-      btnVoteNo.classList.remove('ring-2', 'ring-rose-400', 'bg-rose-500/30');
-      btnVoteUnknown.classList.remove('ring-2', 'ring-slate-300', 'bg-slate-700');
+      document.querySelectorAll('.vote-opt-btn').forEach(btn => {
+        btn.classList.remove('ring-2', 'ring-amber-400', 'ring-emerald-400', 'ring-rose-400');
+      });
       panelVoteConfirm.classList.add('hidden');
     });
 
@@ -1013,24 +1135,20 @@
     });
 
     function setVoteButtonsDisabled(disabled) {
-      btnVoteYes.disabled = disabled;
-      btnVoteNo.disabled = disabled;
-      btnVoteUnknown.disabled = disabled;
-      if (disabled) {
-        btnVoteYes.classList.add('opacity-40', 'cursor-not-allowed');
-        btnVoteNo.classList.add('opacity-40', 'cursor-not-allowed');
-        btnVoteUnknown.classList.add('opacity-40', 'cursor-not-allowed');
-      } else {
-        btnVoteYes.classList.remove('opacity-40', 'cursor-not-allowed', 'ring-2', 'ring-emerald-400', 'bg-emerald-500/30');
-        btnVoteNo.classList.remove('opacity-40', 'cursor-not-allowed', 'ring-2', 'ring-rose-400', 'bg-rose-500/30');
-        btnVoteUnknown.classList.remove('opacity-40', 'cursor-not-allowed', 'ring-2', 'ring-slate-300', 'bg-slate-700');
-      }
+      document.querySelectorAll('.vote-opt-btn').forEach(btn => {
+        btn.disabled = disabled;
+        if (disabled) {
+          btn.classList.add('opacity-40', 'cursor-not-allowed');
+        } else {
+          btn.classList.remove('opacity-40', 'cursor-not-allowed', 'ring-2', 'ring-amber-400', 'ring-emerald-400', 'ring-rose-400');
+        }
+      });
     }
 
     // ==========================================
     // RENDER GIAO DIỆN CHUNG
     // ==========================================
-    let lastRenderedQuestionText = '';
+    let lastRenderedQuestionKey = '';
 
     function renderGameState(data) {
       currentRoomCode = data.roomCode;
@@ -1076,6 +1194,7 @@
           }`;
         }
 
+        // Render thẻ người chơi
         playersGrid.innerHTML = data.players.map(p => {
           const isCurrentTurn = p.id === data.activePlayerId;
           const isSelf = p.isYou;
@@ -1114,6 +1233,7 @@
           `;
         }).join('');
 
+        // Khung Kết quả lượt trước
         if (data.lastTurnResult) {
           panelLastResult.classList.remove('hidden');
           lastResultText.textContent = `"${data.lastTurnResult.question}" (bởi ${data.lastTurnResult.askedBy})`;
@@ -1123,38 +1243,73 @@
           lastResultBadges.innerHTML = answerKeys.map(pId => {
             const voter = data.players.find(p => p.id === pId);
             const ans = answers[pId];
-            const badgeClass = ans === 'YES' 
-              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' 
-              : (ans === 'NO' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-slate-800 text-slate-300 border-slate-700');
-            const label = ans === 'YES' ? 'CÓ' : (ans === 'NO' ? 'KHÔNG' : 'KHÔNG RÕ');
+            let badgeClass = 'bg-slate-800 text-slate-300 border-slate-700';
+            let label = ans;
+            if (ans === 'YES' || ans === 'CORRECT') {
+              badgeClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+              label = ans === 'YES' ? 'CÓ' : 'ĐÚNG';
+            } else if (ans === 'NO' || ans === 'WRONG') {
+              badgeClass = 'bg-rose-500/20 text-rose-300 border-rose-500/40';
+              label = ans === 'NO' ? 'KHÔNG' : 'SAI';
+            } else if (ans === 'UNKNOWN') {
+              label = 'KHÔNG RÕ';
+            }
             return `<span class="px-2.5 py-1 rounded-xl border ${badgeClass} font-semibold"><b class="text-amber-300">${voter?.name || '...'}:</b> ${label}</span>`;
           }).join('');
         } else {
           panelLastResult.classList.add('hidden');
         }
 
+        // Bảng Đặt câu hỏi / Đoán
         if (isMyTurn && data.state === 'PLAYING') {
           panelMyTurn.classList.remove('hidden');
         } else {
           panelMyTurn.classList.add('hidden');
         }
 
+        // Bảng Biểu quyết (Xử lý linh hoạt giữa Câu hỏi Có/Không và Câu Đoán Tên)
         if (data.currentQuestion) {
-          if (data.currentQuestion.text !== lastRenderedQuestionText) {
-            lastRenderedQuestionText = data.currentQuestion.text;
+          const currentKey = `${data.currentQuestion.type}_${data.currentQuestion.text}`;
+          if (currentKey !== lastRenderedQuestionKey) {
+            lastRenderedQuestionKey = currentKey;
             hasVotedCurrentQuestion = false;
             selectedVoteOption = null;
             panelVoteConfirm.classList.add('hidden');
             setVoteButtonsDisabled(false);
           }
 
-          currentQuestionText.textContent = `"${data.currentQuestion.text}" (bởi ${data.currentQuestion.askedBy})`;
+          if (data.currentQuestion.type === 'GUESS') {
+            votePanelTitle.textContent = 'Bình chọn câu đoán nhân vật';
+            votePanelTitle.className = 'text-xs font-black text-amber-400 uppercase tracking-wider animate-pulse';
+            currentQuestionText.innerHTML = `<span class="text-slate-400 text-xs block mb-1">Người chơi <b class="text-amber-400 font-bold">${data.currentQuestion.askedBy}</b> đoán mình là:</span> <span class="text-lg font-black text-white">"${data.currentQuestion.text}"</span>`;
+            
+            // Hiện nhân vật thật cho người bình chọn xem
+            if (!isMyTurn) {
+              guessVerifyExtra.classList.remove('hidden');
+              guessRealCharName.textContent = data.currentQuestion.actualCharacter;
+            } else {
+              guessVerifyExtra.classList.add('hidden');
+            }
 
-          if (!isMyTurn && data.state === 'PLAYING') {
-            votingButtons.classList.remove('hidden');
+            votingButtonsRegular.classList.add('hidden');
+            if (!isMyTurn && data.state === 'PLAYING') {
+              votingButtonsGuess.classList.remove('hidden');
+            } else {
+              votingButtonsGuess.classList.add('hidden');
+            }
+
           } else {
-            votingButtons.classList.add('hidden');
-            panelVoteConfirm.classList.add('hidden');
+            votePanelTitle.textContent = 'Câu hỏi trên bàn';
+            votePanelTitle.className = 'text-xs font-bold text-indigo-400 uppercase tracking-wider';
+            currentQuestionText.textContent = `"${data.currentQuestion.text}" (bởi ${data.currentQuestion.askedBy})`;
+            guessVerifyExtra.classList.add('hidden');
+
+            votingButtonsGuess.classList.add('hidden');
+            if (!isMyTurn && data.state === 'PLAYING') {
+              votingButtonsRegular.classList.remove('hidden');
+            } else {
+              votingButtonsRegular.classList.add('hidden');
+            }
           }
 
           const answers = data.currentQuestion.answers || {};
@@ -1167,27 +1322,37 @@
             voteResults.innerHTML = answerKeys.map(pId => {
               const voter = data.players.find(p => p.id === pId);
               const ans = answers[pId];
-              const badgeClass = ans === 'YES' 
-                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' 
-                : (ans === 'NO' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-slate-800 text-slate-300 border-slate-700');
-              const label = ans === 'YES' ? 'CÓ' : (ans === 'NO' ? 'KHÔNG' : 'KHÔNG RÕ');
+              let badgeClass = 'bg-slate-800 text-slate-300 border-slate-700';
+              let label = ans;
+              if (ans === 'YES' || ans === 'CORRECT') {
+                badgeClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+                label = ans === 'YES' ? 'CÓ' : 'ĐÚNG';
+              } else if (ans === 'NO' || ans === 'WRONG') {
+                badgeClass = 'bg-rose-500/20 text-rose-300 border-rose-500/40';
+                label = ans === 'NO' ? 'KHÔNG' : 'SAI';
+              } else if (ans === 'UNKNOWN') {
+                label = 'KHÔNG RÕ';
+              }
               return `<span class="px-2.5 py-1 rounded-xl border ${badgeClass} font-semibold"><b class="text-amber-300">${voter?.name || '...'}:</b> ${label}</span>`;
             }).join('');
           } else {
-            voteResults.innerHTML = '<span class="text-slate-500 italic">Đang chờ mọi người bấm CÓ hoặc KHÔNG...</span>';
+            voteResults.innerHTML = '<span class="text-slate-500 italic">Đang chờ mọi người nhấn biểu quyết...</span>';
           }
         } else {
-          lastRenderedQuestionText = '';
+          lastRenderedQuestionKey = '';
           hasVotedCurrentQuestion = false;
           selectedVoteOption = null;
           panelVoteConfirm.classList.add('hidden');
           setVoteButtonsDisabled(false);
           currentQuestionText.textContent = 'Chưa có câu hỏi nào trong lượt này...';
-          votingButtons.classList.add('hidden');
+          guessVerifyExtra.classList.add('hidden');
+          votingButtonsRegular.classList.add('hidden');
+          votingButtonsGuess.classList.add('hidden');
           voteResults.innerHTML = '';
           voteCounterBadge.textContent = '';
         }
 
+        // Render Logs
         gameLogs.innerHTML = data.logs.map(log => `
           <div class="py-1.5 px-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 leading-relaxed text-xs">
             ${log}
@@ -1197,7 +1362,6 @@
       }
     }
 
-    // Tự động load kho nhân vật khi vừa mở web
     loadCharacterPool();
   </script>
 </body>
