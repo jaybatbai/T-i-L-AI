@@ -117,11 +117,23 @@
       <div id="lobby-player-list" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
     </div>
 
-    <!-- Tùy chỉnh danh sách nhân vật (Chỉ Host thấy) -->
+    <!-- Khu vực quản lý nhân vật vĩnh viễn (Chỉ Host thấy) -->
     <div id="host-settings" class="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 mb-6 hidden">
-      <label class="block text-xs font-bold uppercase tracking-wider text-amber-400 mb-1.5">Tùy biến nhân vật (Tùy chọn)</label>
-      <input id="input-custom-chars" type="text" placeholder="Ví dụ: Doraemon, Nobita, Chaien, Xeko (cách nhau bằng dấu phẩy)" class="w-full text-xs bg-slate-900 border border-slate-700/80 rounded-xl p-3 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-400">
-      <p class="text-[11px] text-slate-500 mt-1.5">Để trống để dùng kho 50+ nhân vật mặc định phong phú.</p>
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h4 class="text-xs font-extrabold uppercase tracking-wider text-amber-400">Kho nhân vật vĩnh viễn</h4>
+          <p class="text-[11px] text-slate-400">Tự động lưu vào trình duyệt, không cần chỉnh sửa code.</p>
+        </div>
+        <button id="btn-open-char-modal" class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition flex items-center gap-1">
+          <span>⚙️ Quản lý kho</span>
+          <span id="badge-char-count" class="px-1.5 py-0.2 bg-amber-500 text-slate-950 rounded-full text-[10px] font-black">0</span>
+        </button>
+      </div>
+
+      <div class="text-[11px] text-slate-400 bg-slate-900 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between">
+        <span>Ván đấu sẽ ngẫu nhiên lấy từ kho nhân vật này.</span>
+        <button id="btn-quick-view-chars" class="text-indigo-400 hover:text-indigo-300 font-bold underline">Xem nhanh</button>
+      </div>
     </div>
 
     <div>
@@ -222,7 +234,6 @@
           </div>
 
           <div>
-            <!-- Danh sách 3 nút chọn biểu quyết -->
             <div id="voting-buttons" class="grid grid-cols-3 gap-2.5 hidden">
               <button id="btn-vote-yes" onclick="selectVoteOption('YES')" class="vote-opt-btn bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-black py-3.5 rounded-2xl transition active:scale-95 text-sm sm:text-base tracking-wide">
                 CÓ
@@ -235,7 +246,7 @@
               </button>
             </div>
 
-            <!-- Thanh xác nhận lựa chọn trước khi gửi -->
+            <!-- Thanh xác nhận trước khi gửi -->
             <div id="panel-vote-confirm" class="hidden mt-3 p-3 bg-slate-950/90 border border-amber-500/40 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-lg">
               <div class="text-xs">
                 <span class="text-slate-400">Bạn đã chọn:</span>
@@ -272,9 +283,50 @@
     </div>
   </div>
 
+  <!-- MODAL: QUẢN LÝ KHO NHÂN VẬT VĨNH VIỄN -->
+  <div id="modal-char-manager" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col max-h-[85vh]">
+      <div class="flex justify-between items-center pb-4 border-b border-slate-800 mb-4">
+        <div>
+          <h3 class="text-lg font-black text-amber-400">📦 KHO NHÂN VẬT VĨNH VIỄN</h3>
+          <p class="text-xs text-slate-400">Lưu trực tiếp trên máy của bạn, tự động nạp mỗi khi tạo phòng.</p>
+        </div>
+        <button id="btn-close-char-modal" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition">✕</button>
+      </div>
+
+      <!-- Ô nhập thêm tên nhân vật -->
+      <div class="space-y-3 mb-4">
+        <div class="flex gap-2">
+          <input id="input-add-char" type="text" placeholder="Nhập tên nhân vật (hoặc nhiều tên cách nhau bằng dấu phẩy)..." class="flex-grow bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-400 text-slate-100 placeholder-slate-500">
+          <button id="btn-add-char" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-sm transition flex-shrink-0">
+            Thêm
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-slate-400 pt-1">
+          <span>Tổng số nhân vật: <b id="modal-total-chars" class="text-amber-400">0</b></span>
+          <div class="flex gap-2">
+            <button id="btn-export-chars" class="hover:text-slate-200 underline">Sao chép tất cả</button>
+            <span>•</span>
+            <button id="btn-reset-default-chars" class="text-rose-400 hover:text-rose-300 underline">Khôi phục mặc định</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Danh sách nhân vật cuộn -->
+      <div id="modal-char-tags" class="flex-grow overflow-y-auto p-3 bg-slate-950/70 border border-slate-800 rounded-2xl flex flex-wrap gap-2 content-start custom-scrollbar min-h-[180px]"></div>
+
+      <div class="pt-4 mt-4 border-t border-slate-800 flex justify-end">
+        <button id="btn-save-char-modal" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition">
+          Xong & Lưu lại
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ==========================================
-    // KHO NHÂN VẬT MẶC ĐỊNH
+    // KHO NHÂN VẬT GỐC MẶC ĐỊNH
     // ==========================================
     const DEFAULT_CHARACTERS = [
       'Doraemon', 'Nobita', 'Shizuka', 'Chaien', 'Suneo',
@@ -288,6 +340,32 @@
       'Elsa', 'Shrek', 'Mickey Mouse', 'Tom', 'Jerry', 'Po (Kung Fu Panda)',
       'Cristiano Ronaldo', 'Lionel Messi', 'Sơn Tùng M-TP'
     ];
+
+    // Quản lý kho nhân vật vĩnh viễn (LocalStorage)
+    const STORAGE_KEY = 'whoami_custom_character_vault';
+    let currentCharacterPool = [];
+
+    function loadCharacterPool() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            currentCharacterPool = parsed;
+            return;
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      currentCharacterPool = [...DEFAULT_CHARACTERS];
+      saveCharacterPool();
+    }
+
+    function saveCharacterPool() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(currentCharacterPool));
+      updateCharacterVaultUI();
+    }
 
     // ==========================================
     // DOM ELEMENTS
@@ -307,9 +385,22 @@
     const hostSettings = document.getElementById('host-settings');
     const btnStartGame = document.getElementById('btn-start-game');
     const waitHostMsg = document.getElementById('wait-host-msg');
-    const inputCustomChars = document.getElementById('input-custom-chars');
     const badgeRole = document.getElementById('badge-role');
     const btnCopyCodeLobby = document.getElementById('btn-copy-code-lobby');
+
+    const btnOpenCharModal = document.getElementById('btn-open-char-modal');
+    const badgeCharCount = document.getElementById('badge-char-count');
+    const btnQuickViewChars = document.getElementById('btn-quick-view-chars');
+
+    const modalCharManager = document.getElementById('modal-char-manager');
+    const btnCloseCharModal = document.getElementById('btn-close-char-modal');
+    const btnSaveCharModal = document.getElementById('btn-save-char-modal');
+    const inputAddChar = document.getElementById('input-add-char');
+    const btnAddChar = document.getElementById('btn-add-char');
+    const modalTotalChars = document.getElementById('modal-total-chars');
+    const modalCharTags = document.getElementById('modal-char-tags');
+    const btnExportChars = document.getElementById('btn-export-chars');
+    const btnResetDefaultChars = document.getElementById('btn-reset-default-chars');
 
     const gameRoomCode = document.getElementById('game-room-code');
     const btnCopyCodeGame = document.getElementById('btn-copy-code-game');
@@ -351,7 +442,7 @@
     let isHost = false;
     let currentRoomCode = '';
     let hasVotedCurrentQuestion = false;
-    let selectedVoteOption = null; // Lưu lựa chọn tạm thời trước khi bấm xác nhận
+    let selectedVoteOption = null;
 
     const connectionsMap = new Map();
     let serverState = null;
@@ -394,6 +485,90 @@
       }
       return arr;
     }
+
+    // ==========================================
+    // LOGIC QUẢN LÝ KHO NHÂN VẬT MODAL
+    // ==========================================
+    function updateCharacterVaultUI() {
+      badgeCharCount.textContent = currentCharacterPool.length;
+      modalTotalChars.textContent = currentCharacterPool.length;
+
+      modalCharTags.innerHTML = currentCharacterPool.map((char, index) => `
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-900 border border-slate-700/80 text-xs font-semibold text-slate-200">
+          <span>${char}</span>
+          <button onclick="removeCharacter(${index})" class="text-slate-500 hover:text-rose-400 font-bold ml-1 text-sm">✕</button>
+        </span>
+      `).join('');
+    }
+
+    window.removeCharacter = function(index) {
+      if (currentCharacterPool.length <= 2) {
+        return showToast('Cần giữ lại ít nhất 2 nhân vật trong kho!');
+      }
+      currentCharacterPool.splice(index, 1);
+      saveCharacterPool();
+    };
+
+    function addCharactersFromInput() {
+      const val = inputAddChar.value.trim();
+      if (!val) return;
+
+      const newNames = val.split(',').map(s => s.trim()).filter(Boolean);
+      let addedCount = 0;
+
+      newNames.forEach(name => {
+        if (!currentCharacterPool.some(c => c.toLowerCase() === name.toLowerCase())) {
+          currentCharacterPool.unshift(name);
+          addedCount++;
+        }
+      });
+
+      inputAddChar.value = '';
+      if (addedCount > 0) {
+        saveCharacterPool();
+        showToast(`Đã thêm ${addedCount} nhân vật vào kho vĩnh viễn!`);
+      } else {
+        showToast('Tên nhân vật này đã có sẵn trong kho.');
+      }
+    }
+
+    btnAddChar.addEventListener('click', addCharactersFromInput);
+    inputAddChar.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') addCharactersFromInput();
+    });
+
+    btnOpenCharModal.addEventListener('click', () => {
+      updateCharacterVaultUI();
+      modalCharManager.classList.remove('hidden');
+    });
+
+    btnQuickViewChars.addEventListener('click', () => {
+      btnOpenCharModal.click();
+    });
+
+    btnCloseCharModal.addEventListener('click', () => {
+      modalCharManager.classList.add('hidden');
+    });
+
+    btnSaveCharModal.addEventListener('click', () => {
+      modalCharManager.classList.add('hidden');
+      showToast('Đã lưu kho nhân vật thành công!');
+    });
+
+    btnExportChars.addEventListener('click', () => {
+      const listStr = currentCharacterPool.join(', ');
+      navigator.clipboard.writeText(listStr).then(() => {
+        showToast('Đã sao chép toàn bộ danh sách nhân vật vào Clipboard!');
+      });
+    });
+
+    btnResetDefaultChars.addEventListener('click', () => {
+      if (confirm('Bạn có chắc chắn muốn khôi phục lại kho nhân vật mặc định ban đầu không?')) {
+        currentCharacterPool = [...DEFAULT_CHARACTERS];
+        saveCharacterPool();
+        showToast('Đã khôi phục kho nhân vật gốc.');
+      }
+    });
 
     // ==========================================
     // LOGIC DÀNH CHO CHỦ PHÒNG (HOST ENGINE)
@@ -705,6 +880,8 @@
       lobbyRoomCode.textContent = roomCode;
 
       if (amIHost) {
+        loadCharacterPool();
+        updateCharacterVaultUI();
         hostSettings.classList.remove('hidden');
         btnStartGame.classList.remove('hidden');
         waitHostMsg.classList.add('hidden');
@@ -725,16 +902,11 @@
         return showToast('Cần ít nhất 2 người chơi để bắt đầu!');
       }
 
-      let charPool = DEFAULT_CHARACTERS;
-      const customVal = inputCustomChars.value.trim();
-      if (customVal.length > 0) {
-        const parsed = customVal.split(',').map(s => s.trim()).filter(Boolean);
-        if (parsed.length >= serverState.players.length) {
-          charPool = parsed;
-        }
+      if (currentCharacterPool.length < serverState.players.length) {
+        return showToast(`Kho nhân vật hiện có (${currentCharacterPool.length}) ít hơn số người chơi (${serverState.players.length}). Vui lòng thêm nhân vật!`);
       }
 
-      const shuffled = shuffle(charPool);
+      const shuffled = shuffle(currentCharacterPool);
       serverState.players.forEach((p, idx) => {
         p.character = shuffled[idx % shuffled.length];
         p.hasGuessedCorrectly = false;
@@ -797,18 +969,16 @@
     });
 
     // ==========================================
-    // QUY TRÌNH BIỂU QUYẾT 2 BƯỚC (CHỌN -> XÁC NHẬN)
+    // QUY TRÌNH BIỂU QUYẾT 2 BƯỚC
     // ==========================================
     window.selectVoteOption = function(answer) {
       if (hasVotedCurrentQuestion) return;
       selectedVoteOption = answer;
 
-      // Xóa highlight cũ trên các nút
       btnVoteYes.classList.remove('ring-2', 'ring-emerald-400', 'bg-emerald-500/30');
       btnVoteNo.classList.remove('ring-2', 'ring-rose-400', 'bg-rose-500/30');
       btnVoteUnknown.classList.remove('ring-2', 'ring-slate-300', 'bg-slate-700');
 
-      // Thêm highlight cho nút đang chọn
       if (answer === 'YES') {
         btnVoteYes.classList.add('ring-2', 'ring-emerald-400', 'bg-emerald-500/30');
         pendingVoteLabel.textContent = 'CÓ';
@@ -906,7 +1076,6 @@
           }`;
         }
 
-        // Render thẻ nhân vật với TÊN NỔI BẬT và icon tối giản
         playersGrid.innerHTML = data.players.map(p => {
           const isCurrentTurn = p.id === data.activePlayerId;
           const isSelf = p.isYou;
@@ -921,7 +1090,6 @@
           return `
             <div class="relative border-2 ${cardBorderClass} backdrop-blur-md rounded-2xl p-3.5 flex flex-col items-center text-center transition-all duration-300">
               
-              <!-- TÊN NGƯỜI CHƠI NỔI BẬT -->
               <div class="w-full flex items-center justify-center gap-1.5 mb-2.5 pb-2 border-b border-slate-800">
                 <span class="text-sm font-black text-slate-100 truncate tracking-wide">
                   ${p.name}
@@ -930,14 +1098,12 @@
                 ${p.id === data.hostId ? '<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-extrabold">Host</span>' : ''}
               </div>
 
-              <!-- Ô HIỂN THỊ NHÂN VẬT -->
               <div class="w-full py-3 px-2 rounded-xl bg-slate-950 border border-slate-800/90 flex items-center justify-center min-h-[52px] shadow-inner">
                 <span class="font-extrabold text-sm sm:text-base ${p.character === '???' ? 'text-amber-400 font-mono tracking-widest text-lg' : 'text-emerald-400'}">
                   ${p.character}
                 </span>
               </div>
 
-              <!-- TRẠNG THÁI DƯỚI ĐÁY THẺ -->
               <div class="mt-2 text-[10px] font-semibold text-slate-400 flex items-center gap-1">
                 ${p.hasGuessedCorrectly 
                   ? '<span class="text-emerald-400 font-bold">✓ Đã đoán đúng</span>' 
@@ -948,7 +1114,6 @@
           `;
         }).join('');
 
-        // Khung Kết quả lượt vừa rồi
         if (data.lastTurnResult) {
           panelLastResult.classList.remove('hidden');
           lastResultText.textContent = `"${data.lastTurnResult.question}" (bởi ${data.lastTurnResult.askedBy})`;
@@ -968,14 +1133,12 @@
           panelLastResult.classList.add('hidden');
         }
 
-        // Bảng Đặt câu hỏi
         if (isMyTurn && data.state === 'PLAYING') {
           panelMyTurn.classList.remove('hidden');
         } else {
           panelMyTurn.classList.add('hidden');
         }
 
-        // Bảng Biểu quyết
         if (data.currentQuestion) {
           if (data.currentQuestion.text !== lastRenderedQuestionText) {
             lastRenderedQuestionText = data.currentQuestion.text;
@@ -1025,7 +1188,6 @@
           voteCounterBadge.textContent = '';
         }
 
-        // Render Logs sạch sẽ với Tag phân loại
         gameLogs.innerHTML = data.logs.map(log => `
           <div class="py-1.5 px-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 leading-relaxed text-xs">
             ${log}
@@ -1034,6 +1196,9 @@
         gameLogs.scrollTop = gameLogs.scrollHeight;
       }
     }
+
+    // Tự động load kho nhân vật khi vừa mở web
+    loadCharacterPool();
   </script>
 </body>
 </html>
