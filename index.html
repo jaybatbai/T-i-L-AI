@@ -63,7 +63,7 @@
       <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-500 tracking-tight">
         ĐOÁN NHÂN VẬT
       </h1>
-      <p class="text-slate-400 text-sm mt-1.5 font-medium">Phiên bản Web tĩnh P2P - Không cần máy chủ</p>
+      <p class="text-slate-400 text-sm mt-1.5 font-medium">Phiên bản Web tĩnh P2P - Tự động đồng bộ lượt</p>
     </div>
 
     <div class="space-y-4">
@@ -235,13 +235,13 @@
 
           <div>
             <div id="voting-buttons" class="grid grid-cols-3 gap-2.5 hidden">
-              <button onclick="voteAnswer('YES')" class="group bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:border-emerald-500 font-black py-3 rounded-2xl transition active:scale-95 flex items-center justify-center gap-1.5 text-sm sm:text-base">
+              <button id="btn-vote-yes" onclick="voteAnswer('YES')" class="group bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:border-emerald-500 font-black py-3 rounded-2xl transition active:scale-95 flex items-center justify-center gap-1.5 text-sm sm:text-base">
                 <span class="text-lg">👍</span> CÓ
               </button>
-              <button onclick="voteAnswer('NO')" class="group bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 hover:border-rose-500 font-black py-3 rounded-2xl transition active:scale-95 flex items-center justify-center gap-1.5 text-sm sm:text-base">
+              <button id="btn-vote-no" onclick="voteAnswer('NO')" class="group bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 hover:border-rose-500 font-black py-3 rounded-2xl transition active:scale-95 flex items-center justify-center gap-1.5 text-sm sm:text-base">
                 <span class="text-lg">👎</span> KHÔNG
               </button>
-              <button onclick="voteAnswer('UNKNOWN')" class="group bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold py-3 rounded-2xl transition active:scale-95 flex items-center justify-center gap-1.5 text-xs sm:text-sm">
+              <button id="btn-vote-unknown" onclick="voteAnswer('UNKNOWN')" class="group bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold py-3 rounded-2xl transition active:scale-95 flex items-center justify-center gap-1.5 text-xs sm:text-sm">
                 <span class="text-lg">🤷</span> KHÔNG RÕ
               </button>
             </div>
@@ -258,7 +258,7 @@
           <span class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
             <span>📜</span> Nhật ký ván đấu
           </span>
-          <span class="text-[10px] text-slate-500 font-medium">P2P Network</span>
+          <span class="text-[10px] text-slate-500 font-medium">P2P Realtime</span>
         </div>
         <div id="game-logs" class="flex-grow overflow-y-auto space-y-2 text-xs text-slate-300 pr-1 custom-scrollbar"></div>
       </div>
@@ -318,6 +318,9 @@
     const btnSkipTurn = document.getElementById('btn-skip-turn');
     const currentQuestionText = document.getElementById('current-question-text');
     const votingButtons = document.getElementById('voting-buttons');
+    const btnVoteYes = document.getElementById('btn-vote-yes');
+    const btnVoteNo = document.getElementById('btn-vote-no');
+    const btnVoteUnknown = document.getElementById('btn-vote-unknown');
     const voteResults = document.getElementById('vote-results');
     const voteCounterBadge = document.getElementById('vote-counter-badge');
     const gameLogs = document.getElementById('game-logs');
@@ -330,11 +333,12 @@
     let myName = '';
     let isHost = false;
     let currentRoomCode = '';
+    let hasVotedCurrentQuestion = false;
 
-    // Dành cho Host
-    let connections = [];
+    // Quản lý kết nối chuẩn xác bằng Map
+    const connectionsMap = new Map();
     let serverState = null;
-    let autoNextTurnTimeout = null; // Quản lý bộ đếm tự chuyển lượt
+    let autoNextTurnTimeout = null;
 
     // Dành cho Client
     let hostConnection = null;
@@ -411,13 +415,16 @@
       });
 
       myPeer.on('connection', (conn) => {
-        connections.push(conn);
+        conn.on('open', () => {
+          connectionsMap.set(conn.peer, conn);
+        });
 
         conn.on('data', (data) => {
-          handleClientAction(conn, data);
+          handleClientAction(conn.peer, data);
         });
 
         conn.on('close', () => {
+          connectionsMap.delete(conn.peer);
           handlePlayerDisconnect(conn.peer);
         });
       });
@@ -431,17 +438,18 @@
       });
     }
 
-    function handleClientAction(conn, data) {
+    function handleClientAction(senderPeerId, data) {
       if (!serverState) return;
       const { type, payload } = data;
 
       if (type === 'JOIN_REQUEST') {
         if (serverState.state !== 'LOBBY') {
-          conn.send({ type: 'ERROR', message: 'Trò chơi đã bắt đầu rồi!' });
+          const conn = connectionsMap.get(senderPeerId);
+          if (conn && conn.open) conn.send({ type: 'ERROR', message: 'Trò chơi đã bắt đầu rồi!' });
           return;
         }
         serverState.players.push({
-          id: conn.peer,
+          id: senderPeerId,
           name: payload.name || `Người chơi ${serverState.players.length + 1}`,
           character: null,
           hasGuessedCorrectly: false
@@ -452,9 +460,8 @@
 
       if (type === 'ASK_QUESTION') {
         const activePlayer = serverState.players[serverState.turnIndex];
-        if (activePlayer.id !== conn.peer) return;
+        if (activePlayer.id !== senderPeerId) return;
 
-        // Xóa timeout cũ nếu có
         if (autoNextTurnTimeout) clearTimeout(autoNextTurnTimeout);
 
         serverState.currentQuestion = {
@@ -469,19 +476,20 @@
       if (type === 'SUBMIT_ANSWER') {
         if (!serverState.currentQuestion) return;
         const activePlayer = serverState.players[serverState.turnIndex];
-        if (activePlayer.id === conn.peer) return;
+        if (activePlayer.id === senderPeerId) return;
 
-        serverState.currentQuestion.answers[conn.peer] = payload.answer;
+        // Lưu câu trả lời của người này
+        serverState.currentQuestion.answers[senderPeerId] = payload.answer;
         
-        // KIỂM TRA ĐÃ ĐỦ TẤT CẢ NGƯỜI CHƠI TRẢ LỜI CHƯA
-        const totalOtherPlayers = serverState.players.filter(p => p.id !== activePlayer.id).length;
-        const answeredCount = Object.keys(serverState.currentQuestion.answers).length;
+        // KIỂM TRA ĐÃ ĐỦ TẤT CẢ NGƯỜI CẦN TRẢ LỜI CHƯA
+        const votersNeeded = serverState.players.filter(p => p.id !== activePlayer.id);
+        const answeredKeys = Object.keys(serverState.currentQuestion.answers);
 
-        if (answeredCount >= totalOtherPlayers) {
-          serverState.logs.push(`⏳ Đã nhận đủ câu trả lời. Chuẩn bị chuyển lượt tiếp theo...`);
+        if (answeredKeys.length >= votersNeeded.length && votersNeeded.length > 0) {
+          serverState.logs.push(`⏳ Đã đủ câu trả lời! Tự động chuyển lượt sau 2s...`);
           broadcastHostState();
 
-          // Chờ 2.5 giây để người hỏi kịp đọc câu trả lời rồi tự động chuyển lượt
+          // Chuyển lượt sau 2 giây
           if (autoNextTurnTimeout) clearTimeout(autoNextTurnTimeout);
           autoNextTurnTimeout = setTimeout(() => {
             if (serverState && serverState.state === 'PLAYING') {
@@ -489,7 +497,7 @@
               advanceHostTurn();
               broadcastHostState();
             }
-          }, 2500);
+          }, 2000);
           return;
         }
 
@@ -498,7 +506,7 @@
 
       if (type === 'NEXT_TURN') {
         const activePlayer = serverState.players[serverState.turnIndex];
-        if (activePlayer.id === conn.peer || serverState.hostId === conn.peer) {
+        if (activePlayer.id === senderPeerId || serverState.hostId === senderPeerId) {
           if (autoNextTurnTimeout) clearTimeout(autoNextTurnTimeout);
           serverState.currentQuestion = null;
           advanceHostTurn();
@@ -507,7 +515,7 @@
       }
 
       if (type === 'MAKE_GUESS') {
-        const player = serverState.players.find(p => p.id === conn.peer);
+        const player = serverState.players.find(p => p.id === senderPeerId);
         if (!player || serverState.state !== 'PLAYING') return;
 
         if (autoNextTurnTimeout) clearTimeout(autoNextTurnTimeout);
@@ -525,7 +533,7 @@
           serverState.logs.push(`❌ ${player.name} đoán là "${payload.guessedName}" nhưng KHÔNG ĐÚNG.`);
         }
 
-        if (serverState.players[serverState.turnIndex].id === conn.peer && serverState.state === 'PLAYING') {
+        if (serverState.players[serverState.turnIndex].id === senderPeerId && serverState.state === 'PLAYING') {
           serverState.currentQuestion = null;
           advanceHostTurn();
         }
@@ -552,7 +560,6 @@
         serverState.logs.push(`🚪 [${leaving.name}] đã rời phòng.`);
       }
       serverState.players = serverState.players.filter(p => p.id !== peerId);
-      connections = connections.filter(c => c.peer !== peerId);
 
       if (serverState.turnIndex >= serverState.players.length) {
         serverState.turnIndex = 0;
@@ -587,7 +594,7 @@
         if (p.id === myId) {
           renderGameState(personalizedState);
         } else {
-          const clientConn = connections.find(c => c.peer === p.id);
+          const clientConn = connectionsMap.get(p.id);
           if (clientConn && clientConn.open) {
             clientConn.send({ type: 'STATE_UPDATE', payload: personalizedState });
           }
@@ -735,7 +742,7 @@
 
     function sendAction(type, payload = {}) {
       if (isHost) {
-        handleClientAction({ peer: myId }, { type, payload });
+        handleClientAction(myId, { type, payload });
       } else if (hostConnection && hostConnection.open) {
         hostConnection.send({ type, payload });
       }
@@ -768,12 +775,32 @@
     });
 
     window.voteAnswer = function(answer) {
+      if (hasVotedCurrentQuestion) return;
+      hasVotedCurrentQuestion = true;
+      setVoteButtonsDisabled(true);
       sendAction('SUBMIT_ANSWER', { answer });
     };
+
+    function setVoteButtonsDisabled(disabled) {
+      btnVoteYes.disabled = disabled;
+      btnVoteNo.disabled = disabled;
+      btnVoteUnknown.disabled = disabled;
+      if (disabled) {
+        btnVoteYes.classList.add('opacity-40', 'cursor-not-allowed');
+        btnVoteNo.classList.add('opacity-40', 'cursor-not-allowed');
+        btnVoteUnknown.classList.add('opacity-40', 'cursor-not-allowed');
+      } else {
+        btnVoteYes.classList.remove('opacity-40', 'cursor-not-allowed');
+        btnVoteNo.classList.remove('opacity-40', 'cursor-not-allowed');
+        btnVoteUnknown.classList.remove('opacity-40', 'cursor-not-allowed');
+      }
+    }
 
     // ==========================================
     // RENDER GIAO DIỆN CHUNG
     // ==========================================
+    let lastRenderedQuestionText = '';
+
     function renderGameState(data) {
       currentRoomCode = data.roomCode;
 
@@ -856,6 +883,13 @@
         }
 
         if (data.currentQuestion) {
+          // Reset trạng thái khóa nút khi có câu hỏi mới
+          if (data.currentQuestion.text !== lastRenderedQuestionText) {
+            lastRenderedQuestionText = data.currentQuestion.text;
+            hasVotedCurrentQuestion = false;
+            setVoteButtonsDisabled(false);
+          }
+
           currentQuestionText.textContent = `"${data.currentQuestion.text}" (bởi ${data.currentQuestion.askedBy})`;
 
           if (!isMyTurn && data.state === 'PLAYING') {
@@ -870,7 +904,7 @@
           const isFinishedVoting = answerKeys.length >= totalVoters && totalVoters > 0;
 
           voteCounterBadge.innerHTML = isFinishedVoting 
-            ? `<span class="text-emerald-400 font-bold animate-pulse">✓ Đã đủ câu trả lời! Đang chuyển lượt...</span>`
+            ? `<span class="text-amber-400 font-bold animate-pulse">⏳ Đã đủ câu trả lời! Đang chuyển lượt...</span>`
             : `${answerKeys.length}/${totalVoters} người đã trả lời`;
 
           if (answerKeys.length > 0) {
@@ -887,6 +921,9 @@
             voteResults.innerHTML = '<span class="text-slate-500 italic">Đang chờ mọi người nhấn biểu quyết...</span>';
           }
         } else {
+          lastRenderedQuestionText = '';
+          hasVotedCurrentQuestion = false;
+          setVoteButtonsDisabled(false);
           currentQuestionText.textContent = 'Chưa có câu hỏi nào trong lượt này...';
           votingButtons.classList.add('hidden');
           voteResults.innerHTML = '';
