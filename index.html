@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- PeerJS CDN: Thư viện kết nối WebRTC P2P không cần backend -->
+  <!-- PeerJS CDN: Kết nối WebRTC P2P không cần Backend -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <style>
     body {
@@ -332,11 +332,12 @@
     let currentRoomCode = '';
 
     // Dành cho Host
-    let connections = []; // Danh sách dataConnection tới các client
-    let serverState = null; // Trạng thái game gốc do Host giữ
+    let connections = [];
+    let serverState = null;
+    let autoNextTurnTimeout = null; // Quản lý bộ đếm tự chuyển lượt
 
     // Dành cho Client
-    let hostConnection = null; // Kết nối từ client tới Host
+    let hostConnection = null;
 
     function showToast(msg) {
       const toast = document.getElementById('toast');
@@ -423,7 +424,7 @@
 
       myPeer.on('error', (err) => {
         if (err.type === 'unavailable-id') {
-          showToast('Mã phòng này vừa được sử dụng, vui lòng thử bấm Tạo phòng lại!');
+          showToast('Mã phòng này vừa được sử dụng, vui lòng bấm Tạo phòng lại!');
         } else {
           showToast('Lỗi kết nối P2P: ' + err.type);
         }
@@ -453,6 +454,9 @@
         const activePlayer = serverState.players[serverState.turnIndex];
         if (activePlayer.id !== conn.peer) return;
 
+        // Xóa timeout cũ nếu có
+        if (autoNextTurnTimeout) clearTimeout(autoNextTurnTimeout);
+
         serverState.currentQuestion = {
           text: payload.question,
           askedBy: activePlayer.name,
@@ -468,12 +472,34 @@
         if (activePlayer.id === conn.peer) return;
 
         serverState.currentQuestion.answers[conn.peer] = payload.answer;
+        
+        // KIỂM TRA ĐÃ ĐỦ TẤT CẢ NGƯỜI CHƠI TRẢ LỜI CHƯA
+        const totalOtherPlayers = serverState.players.filter(p => p.id !== activePlayer.id).length;
+        const answeredCount = Object.keys(serverState.currentQuestion.answers).length;
+
+        if (answeredCount >= totalOtherPlayers) {
+          serverState.logs.push(`⏳ Đã nhận đủ câu trả lời. Chuẩn bị chuyển lượt tiếp theo...`);
+          broadcastHostState();
+
+          // Chờ 2.5 giây để người hỏi kịp đọc câu trả lời rồi tự động chuyển lượt
+          if (autoNextTurnTimeout) clearTimeout(autoNextTurnTimeout);
+          autoNextTurnTimeout = setTimeout(() => {
+            if (serverState && serverState.state === 'PLAYING') {
+              serverState.currentQuestion = null;
+              advanceHostTurn();
+              broadcastHostState();
+            }
+          }, 2500);
+          return;
+        }
+
         broadcastHostState();
       }
 
       if (type === 'NEXT_TURN') {
         const activePlayer = serverState.players[serverState.turnIndex];
         if (activePlayer.id === conn.peer || serverState.hostId === conn.peer) {
+          if (autoNextTurnTimeout) clearTimeout(autoNextTurnTimeout);
           serverState.currentQuestion = null;
           advanceHostTurn();
           broadcastHostState();
@@ -483,6 +509,8 @@
       if (type === 'MAKE_GUESS') {
         const player = serverState.players.find(p => p.id === conn.peer);
         if (!player || serverState.state !== 'PLAYING') return;
+
+        if (autoNextTurnTimeout) clearTimeout(autoNextTurnTimeout);
 
         const isCorrect = player.character.trim().toLowerCase() === payload.guessedName.trim().toLowerCase();
         if (isCorrect) {
@@ -517,6 +545,8 @@
 
     function handlePlayerDisconnect(peerId) {
       if (!serverState) return;
+      if (autoNextTurnTimeout) clearTimeout(autoNextTurnTimeout);
+
       const leaving = serverState.players.find(p => p.id === peerId);
       if (leaving) {
         serverState.logs.push(`🚪 [${leaving.name}] đã rời phòng.`);
@@ -661,7 +691,6 @@
       }
     }
 
-    // Host bấm Bắt đầu trận đấu
     btnStartGame.addEventListener('click', () => {
       if (!isHost || !serverState) return;
       if (serverState.players.length < 2) {
@@ -691,9 +720,9 @@
       broadcastHostState();
     });
 
-    // Host bấm Chơi lại ván mới
     btnRestartGame.addEventListener('click', () => {
       if (!isHost || !serverState) return;
+      if (autoNextTurnTimeout) clearTimeout(autoNextTurnTimeout);
       serverState.state = 'LOBBY';
       serverState.currentQuestion = null;
       serverState.players.forEach(p => {
@@ -704,7 +733,6 @@
       broadcastHostState();
     });
 
-    // Gửi hành động
     function sendAction(type, payload = {}) {
       if (isHost) {
         handleClientAction({ peer: myId }, { type, payload });
@@ -838,7 +866,12 @@
 
           const answers = data.currentQuestion.answers || {};
           const answerKeys = Object.keys(answers);
-          voteCounterBadge.textContent = `${answerKeys.length}/${data.players.length - 1} người đã trả lời`;
+          const totalVoters = data.players.length - 1;
+          const isFinishedVoting = answerKeys.length >= totalVoters && totalVoters > 0;
+
+          voteCounterBadge.innerHTML = isFinishedVoting 
+            ? `<span class="text-emerald-400 font-bold animate-pulse">✓ Đã đủ câu trả lời! Đang chuyển lượt...</span>`
+            : `${answerKeys.length}/${totalVoters} người đã trả lời`;
 
           if (answerKeys.length > 0) {
             voteResults.innerHTML = answerKeys.map(pId => {
