@@ -92,7 +92,7 @@
 
   <!-- MÀN HÌNH 2: PHÒNG CHỜ (LOBBY) -->
   <div id="screen-lobby" class="w-full max-w-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-2xl hidden my-auto transition-all">
-    <div class="flex flex-wrap gap-3 justify-between items-center border-b border-slate-800 pb-5 mb-6">
+    <div class="flex flex-wrap gap-3 justify-between items-center border-b border-slate-800 pb-5 mb-5">
       <div>
         <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Mã phòng</span>
         <div class="flex items-center gap-2 mt-0.5">
@@ -102,37 +102,37 @@
           </button>
         </div>
       </div>
-      <div id="badge-role" class="px-4 py-1.5 bg-slate-800 border border-slate-700 text-slate-300 text-xs font-bold rounded-full">
-        Thành viên
+      <div class="flex items-center gap-2">
+        <div id="badge-current-theme" class="px-3.5 py-1.5 bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 text-xs font-bold rounded-full">
+          Chủ đề: Showbiz
+        </div>
+        <div id="badge-role" class="px-3.5 py-1.5 bg-slate-800 border border-slate-700 text-slate-300 text-xs font-bold rounded-full">
+          Thành viên
+        </div>
       </div>
     </div>
 
-    <div class="mb-6">
+    <!-- Danh sách người chơi trong phòng chờ -->
+    <div class="mb-5">
       <div class="flex justify-between items-center mb-3">
         <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wide">Danh sách người chơi</h3>
         <span class="text-xs font-bold px-2.5 py-0.5 bg-slate-800 border border-slate-700 rounded-full text-slate-400">
           <span id="lobby-player-count">0</span> người
         </span>
       </div>
-      <div id="lobby-player-list" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+      <div id="lobby-player-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
     </div>
 
-    <!-- Khu vực quản lý nhân vật vĩnh viễn (Chỉ Host thấy) -->
-    <div id="host-settings" class="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 mb-6 hidden">
-      <div class="flex items-center justify-between mb-3">
+    <!-- Khu vực tùy chỉnh & Gói chủ đề (Chỉ Host thấy) -->
+    <div id="host-settings" class="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 mb-5 hidden space-y-3">
+      <div class="flex items-center justify-between">
         <div>
-          <h4 class="text-xs font-extrabold uppercase tracking-wider text-amber-400">Kho nhân vật vĩnh viễn</h4>
-          <p class="text-[11px] text-slate-400">Tự động nạp từ máy hoặc đồng bộ Google Sheet.</p>
+          <h4 class="text-xs font-extrabold uppercase tracking-wider text-amber-400">Kho nhân vật ván đấu</h4>
+          <p class="text-[11px] text-slate-400">Đang có <b id="lobby-char-count" class="text-amber-400">0</b> nhân vật sẵn sàng.</p>
         </div>
-        <button id="btn-open-char-modal" class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition flex items-center gap-1">
-          <span>⚙️ Quản lý kho</span>
-          <span id="badge-char-count" class="px-1.5 py-0.2 bg-amber-500 text-slate-950 rounded-full text-[10px] font-black">0</span>
+        <button id="btn-open-char-modal" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black transition shadow-lg shadow-amber-500/20 flex items-center gap-1.5 active:scale-95">
+          <span>📦 Đổi Chủ Đề / Sửa Kho</span>
         </button>
-      </div>
-
-      <div class="text-[11px] text-slate-400 bg-slate-900 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between">
-        <span>Game sẽ bốc ngẫu nhiên nhân vật từ kho này.</span>
-        <button id="btn-quick-view-chars" class="text-indigo-400 hover:text-indigo-300 font-bold underline">Xem / Thêm nhân vật</button>
       </div>
     </div>
 
@@ -196,19 +196,19 @@
               <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
               <span class="text-xs font-extrabold text-amber-400 uppercase tracking-wider">Đang là lượt của bạn</span>
             </div>
-            <span class="text-xs text-slate-400 font-medium">Hỏi Có/Không hoặc đoán tên nhân vật</span>
+            <span class="text-xs text-slate-400 font-medium">Hỏi Có/Không hoặc chốt đoán tên</span>
           </div>
 
           <div class="space-y-3">
             <div class="flex gap-2">
-              <input id="input-question" type="text" placeholder="Ví dụ: Tôi có phải là nhân vật Anime không?..." class="flex-grow bg-slate-950 border border-slate-700/80 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 text-slate-100 placeholder-slate-500">
+              <input id="input-question" type="text" placeholder="Ví dụ: Tôi có phải là diễn viên không?..." class="flex-grow bg-slate-950 border border-slate-700/80 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 text-slate-100 placeholder-slate-500">
               <button id="btn-send-question" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-5 py-3 rounded-2xl text-sm transition shadow-lg shadow-amber-500/20 active:scale-95 flex-shrink-0">
                 Hỏi
               </button>
             </div>
 
             <div class="flex flex-wrap sm:flex-nowrap items-center gap-2">
-              <input id="input-guess-name" type="text" placeholder="Tôi đoán tôi là ai? (Ví dụ: Đôrêmon, Sơn Tùng)..." class="flex-grow bg-slate-950 border border-slate-700/80 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 text-slate-100 placeholder-slate-500">
+              <input id="input-guess-name" type="text" placeholder="Tôi đoán tôi là ai? (Ví dụ: Sơn Tùng, Doraemon)..." class="flex-grow bg-slate-950 border border-slate-700/80 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 text-slate-100 placeholder-slate-500">
               <div class="flex gap-2 w-full sm:w-auto">
                 <button id="btn-make-guess" class="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-5 py-3 rounded-2xl text-sm transition shadow-lg shadow-emerald-600/20 active:scale-95 flex-shrink-0">
                   Chốt đoán!
@@ -232,7 +232,7 @@
             <div id="vote-content-container" class="min-h-[60px] flex flex-col justify-center bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80 mb-4">
               <p id="current-question-text" class="text-base sm:text-lg font-medium text-slate-200 italic">Chưa có câu hỏi nào trong lượt này...</p>
               
-              <!-- Khung bổ sung khi đang biểu quyết Đoán Tên Nhân Vật -->
+              <!-- Khung hiển thị nhân vật thật cho người thẩm định đáp án -->
               <div id="guess-verify-extra" class="hidden mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
                 <span class="text-slate-400">Nhân vật thật trên đầu họ:</span>
                 <span id="guess-real-char-name" class="font-extrabold text-amber-400 text-sm px-2.5 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/20"></span>
@@ -241,7 +241,7 @@
           </div>
 
           <div>
-            <!-- Bộ nút biểu quyết YES / NO / UNKNOWN thông thường -->
+            <!-- Bộ nút biểu quyết YES / NO / UNKNOWN -->
             <div id="voting-buttons-regular" class="grid grid-cols-3 gap-2.5 hidden">
               <button id="btn-vote-yes" onclick="selectVoteOption('YES')" class="vote-opt-btn bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-black py-3.5 rounded-2xl transition active:scale-95 text-sm sm:text-base tracking-wide">
                 CÓ
@@ -301,54 +301,71 @@
     </div>
   </div>
 
-  <!-- MODAL: QUẢN LÝ KHO NHÂN VẬT & ĐỒNG BỘ GOOGLE SHEET -->
-  <div id="modal-char-manager" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col max-h-[85vh]">
-      <div class="flex justify-between items-center pb-4 border-b border-slate-800 mb-4">
+  <!-- MODAL: QUẢN LÝ KHO NHÂN VẬT & CHỌN PRESET -->
+  <div id="modal-char-manager" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4 hidden">
+    <div class="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col max-h-[90vh]">
+      
+      <!-- Header Modal -->
+      <div class="flex justify-between items-center pb-3 border-b border-slate-800 mb-3">
         <div>
-          <h3 class="text-lg font-black text-amber-400">📦 KHO NHÂN VẬT</h3>
-          <p class="text-xs text-slate-400">Thêm thủ công hoặc đồng bộ trực tiếp từ Google Sheet.</p>
+          <h3 class="text-base sm:text-lg font-black text-amber-400 flex items-center gap-2">
+            <span>📦</span> KHO NHÂN VẬT & GÓI CHỦ ĐỀ
+          </h3>
+          <p class="text-xs text-slate-400">Chọn gói chủ đề có sẵn hoặc tự thêm tên tùy thích.</p>
         </div>
         <button id="btn-close-char-modal" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition">✕</button>
       </div>
 
-      <!-- Phần 1: Đồng bộ từ Google Sheets -->
-      <div class="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 mb-3">
-        <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1.5">🔗 Đồng bộ nhanh từ Google Sheet công khai</label>
-        <div class="flex gap-2">
-          <input id="input-sheet-url" type="text" placeholder="Dán link Google Sheet (Cột A là tên nhân vật)..." class="flex-grow bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
-          <button id="btn-sync-sheet" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-2 rounded-xl text-xs transition flex-shrink-0 flex items-center gap-1">
-            <span>Tải về</span>
-          </button>
+      <!-- PHẦN 1: CÁC GÓI CHỦ ĐỀ PRESET NỔI BẬT TRONG MODAL -->
+      <div class="bg-slate-950/90 p-3 rounded-2xl border border-amber-500/30 mb-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-black uppercase tracking-wider text-amber-400">⚡ Chọn nhanh gói chủ đề (1 chạm)</span>
+          <span id="modal-active-theme-pill" class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold text-[10px] border border-amber-500/30"></span>
         </div>
-        <p class="text-[10px] text-slate-500 mt-1">Lưu ý: Sheet cần bật quyền chia sẻ <i>"Bất kỳ ai có đường liên kết đều có thể xem"</i>.</p>
+        <div id="modal-preset-buttons" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
       </div>
 
-      <!-- Phần 2: Thêm thủ công -->
-      <div class="space-y-2 mb-3">
-        <div class="flex gap-2">
-          <input id="input-add-char" type="text" placeholder="Hoặc nhập tên nhân vật (cách nhau bằng dấu phẩy)..." class="flex-grow bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-amber-400 text-slate-100 placeholder-slate-500">
-          <button id="btn-add-char" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs transition flex-shrink-0">
-            Thêm
-          </button>
+      <!-- PHẦN 2: ĐỒNG BỘ GOOGLE SHEET & NHẬP TAY -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+        <!-- Google Sheet -->
+        <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+          <span class="block text-[11px] font-bold text-indigo-400 mb-1">🔗 Đồng bộ Google Sheet</span>
+          <div class="flex gap-1.5">
+            <input id="input-sheet-url" type="text" placeholder="Dán link Sheet..." class="flex-grow bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+            <button id="btn-sync-sheet" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-2.5 py-1.5 rounded-lg text-xs transition flex-shrink-0">
+              Tải
+            </button>
+          </div>
         </div>
 
-        <div class="flex items-center justify-between text-xs text-slate-400 pt-1">
-          <span>Tổng số nhân vật: <b id="modal-total-chars" class="text-amber-400">0</b></span>
-          <div class="flex gap-2">
-            <button id="btn-export-chars" class="hover:text-slate-200 underline">Copy tất cả</button>
-            <span>•</span>
-            <button id="btn-reset-default-chars" class="text-rose-400 hover:text-rose-300 underline">Khôi phục gốc</button>
+        <!-- Nhập tay -->
+        <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+          <span class="block text-[11px] font-bold text-amber-400 mb-1">✍️ Thêm nhân vật tự do</span>
+          <div class="flex gap-1.5">
+            <input id="input-add-char" type="text" placeholder="Tên (cách nhau bằng dấu phẩy)..." class="flex-grow bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-400 text-slate-100 placeholder-slate-500">
+            <button id="btn-add-char" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 rounded-lg text-xs transition flex-shrink-0">
+              Thêm
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- Danh sách nhân vật cuộn -->
-      <div id="modal-char-tags" class="flex-grow overflow-y-auto p-3 bg-slate-950/70 border border-slate-800 rounded-2xl flex flex-wrap gap-2 content-start custom-scrollbar min-h-[140px]"></div>
+      <!-- PHẦN 3: DANH SÁCH THẺ NHÂN VẬT ĐANG CÓ -->
+      <div class="flex items-center justify-between text-xs text-slate-400 pb-1.5 px-1">
+        <span>Danh sách đang chọn: <b id="modal-total-chars" class="text-amber-400 font-extrabold">0</b> nhân vật</span>
+        <div class="flex gap-2 text-[11px]">
+          <button id="btn-export-chars" class="hover:text-slate-200 underline">Copy tất cả</button>
+          <span>•</span>
+          <button id="btn-reset-default-chars" class="text-rose-400 hover:text-rose-300 underline">Reset Showbiz gốc</button>
+        </div>
+      </div>
 
-      <div class="pt-4 mt-3 border-t border-slate-800 flex justify-end">
-        <button id="btn-save-char-modal" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition">
-          Xong & Lưu lại
+      <div id="modal-char-tags" class="flex-grow overflow-y-auto p-3 bg-slate-950 border border-slate-800 rounded-2xl flex flex-wrap gap-1.5 content-start custom-scrollbar min-h-[140px]"></div>
+
+      <!-- Footer Modal -->
+      <div class="pt-3 mt-3 border-t border-slate-800 flex justify-end">
+        <button id="btn-save-char-modal" class="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-6 py-2.5 rounded-xl text-sm transition shadow-lg shadow-emerald-600/20">
+          Xong & Áp dụng
         </button>
       </div>
     </div>
@@ -356,26 +373,81 @@
 
   <script>
     // ==========================================
-    // KHO NHÂN VẬT GỐC MẶC ĐỊNH
+    // CÁC GÓI CHỦ ĐỀ CÓ SẴN (PRESET THEMES)
     // ==========================================
-    const DEFAULT_CHARACTERS = [
-      'Doraemon', 'Nobita', 'Shizuka', 'Chaien', 'Suneo',
-      'Conan', 'Ran Mori', 'Kaito Kid', 'Son Goku', 'Vegeta',
-      'Naruto', 'Sasuke', 'Kakashi', 'Luffy', 'Zoro', 'Sanji',
-      'Levi Ackerman', 'Tanjiro', 'Nezuko', 'Gojo Satoru',
-      'Saitama', 'Pikachu', 'Spider-Man', 'Iron Man', 'Captain America',
-      'Thor', 'Hulk', 'Thanos', 'Doctor Strange', 'Deadpool',
-      'Batman', 'Superman', 'Joker', 'Harry Potter', 'Hermione Granger',
-      'Voldemort', 'Jack Sparrow', 'Sherlock Holmes', 'John Wick',
-      'Elsa', 'Shrek', 'Mickey Mouse', 'Tom', 'Jerry', 'Po (Kung Fu Panda)',
-      'Cristiano Ronaldo', 'Lionel Messi', 'Sơn Tùng M-TP'
-    ];
+    const PRESET_THEMES = {
+      SHOWBIZ: {
+        id: 'SHOWBIZ',
+        name: '🌟 Showbiz Việt & Quốc Tế',
+        list: [
+          'Sơn Tùng M-TP', 'Trấn Thành', 'Trường Giang', 'Mỹ Tâm', 'Đàm Vĩnh Hưng', 'Hồ Ngọc Hà',
+          'HIEUTHUHAI', 'Mono', 'Soobin Hoàng Sơn', 'Đen Vâu', 'Binz', 'Karik', 'Suboi', 'Rhymastic',
+          'JustaTee', 'B Ray', 'Hòa Minzy', 'Đức Phúc', 'Erik', 'Chi Pu', 'Ninh Dương Lan Ngọc',
+          'Diệu Nhi', 'Lê Dương Bảo Lâm', 'Cris Devil Gamer', 'Độ Mixi', 'PewPew', 'Thùy Tiên',
+          'H\'Hen Niê', 'Hoàng Thùy Linh', 'Wren Evans', 'Quang Hùng MasterD', 'Rhyder', 'Captain Boy',
+          'Pháp Kiều', 'HURRYKNG', 'Negav', 'Isaac', 'Noo Phước Thịnh', 'Đông Nhi', 'Bích Phương',
+          'Vũ', 'Tuấn Hưng', 'Bằng Kiều', 'Hoài Linh', 'Việt Hương', 'Thu Trang', 'Tiến Luật',
+          'Anh Tú Atus', 'Thúy Ngân', 'Song Luân', 'Taylor Swift', 'Justin Bieber', 'Michael Jackson',
+          'Ariana Grande', 'Beyoncé', 'Rihanna', 'Bruno Mars', 'Lady Gaga', 'Billie Eilish',
+          'Ed Sheeran', 'Eminem', 'Snoop Dogg', 'Drake', 'The Weeknd', 'Katy Perry', 'Adele',
+          'Dua Lipa', 'Selena Gomez', 'Charlie Puth', 'Post Malone', 'Leonardo DiCaprio', 'Tom Cruise',
+          'Johnny Depp', 'Brad Pitt', 'Angelina Jolie', 'Keanu Reeves', 'Robert Downey Jr.',
+          'Dwayne Johnson (The Rock)', 'Will Smith', 'Zendaya', 'Scarlett Johansson', 'Emma Watson',
+          'Tom Holland', 'Chris Evans', 'Chris Hemsworth', 'Thành Long (Jackie Chan)', 'Châu Tinh Trì',
+          'Chân Tử Đan', 'Lưu Đức Hoa', 'Dương Mịch', 'Triệu Lệ Dĩnh', 'G-Dragon', 'Lisa (Blackpink)',
+          'Jennie (Blackpink)', 'Rosé (Blackpink)', 'Jisoo (Blackpink)', 'Jungkook (BTS)', 'V (BTS)',
+          'IU', 'PSY', 'Song Joong Ki', 'Song Hye Kyo', 'Lee Min Ho', 'Hyun Bin', 'Son Ye Jin'
+        ]
+      },
+      ANIME: {
+        id: 'ANIME',
+        name: '⚔️ Anime & Manga',
+        list: [
+          'Doraemon', 'Nobita', 'Shizuka', 'Chaien', 'Suneo', 'Conan', 'Ran Mori', 'Kaito Kid',
+          'Son Goku', 'Vegeta', 'Naruto', 'Sasuke', 'Kakashi', 'Luffy', 'Zoro', 'Sanji',
+          'Levi Ackerman', 'Tanjiro', 'Nezuko', 'Gojo Satoru', 'Saitama', 'Pikachu',
+          'L (Death Note)', 'Light Yagami', 'Itachi Uchiha', 'Chopper', 'Eren Yeager', 'Killua'
+        ]
+      },
+      HEROES: {
+        id: 'HEROES',
+        name: '🦸 Siêu Anh Hùng Marvel/DC',
+        list: [
+          'Spider-Man', 'Iron Man', 'Captain America', 'Thor', 'Hulk', 'Thanos', 'Black Widow',
+          'Doctor Strange', 'Loki', 'Deadpool', 'Wolverine', 'Batman', 'Superman', 'Joker',
+          'Wonder Woman', 'Flash', 'Aquaman', 'Black Panther', 'Hawkeye', 'Venom'
+        ]
+      },
+      STREAMER: {
+        id: 'STREAMER',
+        name: '🎮 Streamer & Meme',
+        list: [
+          'Độ Mixi', 'PewPew', 'Cris Devil Gamer', 'Xemesis', 'MisThy', 'Linh Ngọc Đàm',
+          'Thầy Giáo Ba', 'Optimus', 'SofM', 'MrBeast', 'IShowSpeed', 'Khaby Lame',
+          'Hasbulla', 'GigaChad', 'Shrek', 'Pepe The Frog', 'Doge (Shiba)'
+        ]
+      },
+      CARTOON: {
+        id: 'CARTOON',
+        name: '🏰 Hoạt Hình & Cổ Tích',
+        list: [
+          'Elsa', 'Anna', 'Shrek', 'Mickey Mouse', 'Donald Duck', 'Tom', 'Jerry',
+          'Po (Kung Fu Panda)', 'Woody', 'Buzz Lightyear', 'Minion', 'Olaf', 'Simba',
+          'Thạch Sanh', 'Thánh Gióng', 'Tấm', 'Cám', 'Aladdin', 'Pinocchio'
+        ]
+      }
+    };
 
     const STORAGE_KEY = 'whoami_custom_character_vault';
+    const THEME_KEY = 'whoami_selected_theme_name';
     let currentCharacterPool = [];
+    let currentThemeName = PRESET_THEMES.SHOWBIZ.name;
 
     function loadCharacterPool() {
       const saved = localStorage.getItem(STORAGE_KEY);
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      if (savedTheme) currentThemeName = savedTheme;
+
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
@@ -387,13 +459,31 @@
           console.error(e);
         }
       }
-      currentCharacterPool = [...DEFAULT_CHARACTERS];
+      currentCharacterPool = [...PRESET_THEMES.SHOWBIZ.list];
+      currentThemeName = PRESET_THEMES.SHOWBIZ.name;
       saveCharacterPool();
     }
 
     function saveCharacterPool() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(currentCharacterPool));
+      localStorage.setItem(THEME_KEY, currentThemeName);
       updateCharacterVaultUI();
+    }
+
+    function applyPresetTheme(presetKey) {
+      const preset = PRESET_THEMES[presetKey];
+      if (!preset) return;
+      currentCharacterPool = [...preset.list];
+      currentThemeName = preset.name;
+      saveCharacterPool();
+      renderModalPresetButtons();
+      showToast(`Đã nạp gói [${preset.name}] (${preset.list.length} nhân vật)!`);
+      
+      if (isHost && serverState) {
+        serverState.currentThemeName = currentThemeName;
+        serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-indigo-900/80 text-indigo-300 text-[10px] font-bold mr-1">CHỦ ĐỀ</span> Chủ phòng đã chuyển sang gói: <b class="text-amber-400">${currentThemeName}</b>.`);
+        broadcastHostState();
+      }
     }
 
     // ==========================================
@@ -411,19 +501,21 @@
     const lobbyRoomCode = document.getElementById('lobby-room-code');
     const lobbyPlayerList = document.getElementById('lobby-player-list');
     const lobbyPlayerCount = document.getElementById('lobby-player-count');
+    const lobbyCharCount = document.getElementById('lobby-char-count');
     const hostSettings = document.getElementById('host-settings');
+    const badgeCurrentTheme = document.getElementById('badge-current-theme');
     const btnStartGame = document.getElementById('btn-start-game');
     const waitHostMsg = document.getElementById('wait-host-msg');
     const badgeRole = document.getElementById('badge-role');
     const btnCopyCodeLobby = document.getElementById('btn-copy-code-lobby');
 
     const btnOpenCharModal = document.getElementById('btn-open-char-modal');
-    const badgeCharCount = document.getElementById('badge-char-count');
-    const btnQuickViewChars = document.getElementById('btn-quick-view-chars');
 
     const modalCharManager = document.getElementById('modal-char-manager');
     const btnCloseCharModal = document.getElementById('btn-close-char-modal');
     const btnSaveCharModal = document.getElementById('btn-save-char-modal');
+    const modalPresetButtons = document.getElementById('modal-preset-buttons');
+    const modalActiveThemePill = document.getElementById('modal-active-theme-pill');
     const inputSheetUrl = document.getElementById('input-sheet-url');
     const btnSyncSheet = document.getElementById('btn-sync-sheet');
     const inputAddChar = document.getElementById('input-add-char');
@@ -526,15 +618,35 @@
       return arr;
     }
 
+    // Render danh sách Preset bên trong Modal
+    function renderModalPresetButtons() {
+      modalActiveThemePill.textContent = currentThemeName;
+      modalPresetButtons.innerHTML = Object.keys(PRESET_THEMES).map(key => {
+        const preset = PRESET_THEMES[key];
+        const isActive = currentThemeName === preset.name;
+        return `
+          <button onclick="applyPresetTheme('${key}')" class="p-2.5 rounded-xl border text-xs font-bold transition text-left flex flex-col justify-between ${
+            isActive 
+              ? 'bg-amber-500/25 border-amber-400 text-amber-300 ring-2 ring-amber-400/50 shadow-md' 
+              : 'bg-slate-900 border-slate-700/80 text-slate-300 hover:border-slate-500 hover:bg-slate-850'
+          }">
+            <span class="truncate font-black">${preset.name}</span>
+            <span class="text-[10px] text-slate-400 font-normal mt-0.5">${preset.list.length} nhân vật</span>
+          </button>
+        `;
+      }).join('');
+    }
+
     // ==========================================
     // LOGIC ĐỒNG BỘ GOOGLE SHEETS & QUẢN LÝ KHO
     // ==========================================
     function updateCharacterVaultUI() {
-      badgeCharCount.textContent = currentCharacterPool.length;
+      lobbyCharCount.textContent = currentCharacterPool.length;
       modalTotalChars.textContent = currentCharacterPool.length;
+      badgeCurrentTheme.textContent = `Chủ đề: ${currentThemeName}`;
 
       modalCharTags.innerHTML = currentCharacterPool.map((char, index) => `
-        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-900 border border-slate-700/80 text-xs font-semibold text-slate-200">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-700/80 text-xs font-semibold text-slate-200">
           <span>${char}</span>
           <button onclick="removeCharacter(${index})" class="text-slate-500 hover:text-rose-400 font-bold ml-1 text-sm">✕</button>
         </span>
@@ -546,7 +658,9 @@
         return showToast('Cần giữ lại ít nhất 2 nhân vật trong kho!');
       }
       currentCharacterPool.splice(index, 1);
+      currentThemeName = 'Tùy biến riêng';
       saveCharacterPool();
+      renderModalPresetButtons();
     };
 
     function addCharactersFromInput() {
@@ -565,55 +679,52 @@
 
       inputAddChar.value = '';
       if (addedCount > 0) {
+        currentThemeName = 'Tùy biến riêng';
         saveCharacterPool();
+        renderModalPresetButtons();
         showToast(`Đã thêm ${addedCount} nhân vật vào kho!`);
       } else {
         showToast('Tên nhân vật này đã có sẵn.');
       }
     }
 
-    // Đọc Google Sheet công khai qua CSV Endpoint
+    // Đọc Google Sheet công khai qua CSV
     btnSyncSheet.addEventListener('click', async () => {
       const url = inputSheetUrl.value.trim();
       if (!url) return showToast('Vui lòng dán liên kết Google Sheet!');
 
       const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-      if (!match) {
-        return showToast('Link Google Sheet không đúng định dạng!');
-      }
+      if (!match) return showToast('Link Google Sheet không đúng định dạng!');
 
       const sheetId = match[1];
       const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
 
-      showToast('Đang tải dữ liệu từ Google Sheet...');
+      showToast('Đang tải từ Google Sheet...');
 
       try {
         const response = await fetch(csvUrl);
         if (!response.ok) throw new Error('Không thể tải');
         const text = await response.text();
 
-        // Tách dòng CSV và làm sạch ký tự ngoặc kép
         const lines = text.split('\n')
           .map(l => l.replace(/^"|"$/g, '').replace(/""/g, '"').trim())
           .filter(l => l && !l.toLowerCase().startsWith('tên') && !l.toLowerCase().startsWith('name') && !l.toLowerCase().startsWith('nhân vật'));
 
-        if (lines.length === 0) {
-          return showToast('Không tìm thấy danh sách tên nhân vật trong bảng tính!');
-        }
+        if (lines.length === 0) return showToast('Không tìm thấy danh sách tên trong bảng!');
 
-        let addedCount = 0;
         lines.forEach(name => {
           if (name.length > 0 && !currentCharacterPool.some(c => c.toLowerCase() === name.toLowerCase())) {
             currentCharacterPool.push(name);
-            addedCount++;
           }
         });
 
+        currentThemeName = 'Google Sheet Sync';
         saveCharacterPool();
+        renderModalPresetButtons();
         inputSheetUrl.value = '';
         showToast(`Đã đồng bộ thành công ${lines.length} nhân vật từ Google Sheet!`);
       } catch (err) {
-        showToast('Lỗi: Hãy chắc chắn Google Sheet đã bật "Bất kỳ ai có đường liên kết đều xem được"!');
+        showToast('Lỗi: Hãy đảm bảo Google Sheet đã bật "Bất kỳ ai có liên kết đều xem được"!');
       }
     });
 
@@ -623,12 +734,9 @@
     });
 
     btnOpenCharModal.addEventListener('click', () => {
+      renderModalPresetButtons();
       updateCharacterVaultUI();
       modalCharManager.classList.remove('hidden');
-    });
-
-    btnQuickViewChars.addEventListener('click', () => {
-      btnOpenCharModal.click();
     });
 
     btnCloseCharModal.addEventListener('click', () => {
@@ -648,10 +756,12 @@
     });
 
     btnResetDefaultChars.addEventListener('click', () => {
-      if (confirm('Khôi phục lại kho nhân vật mặc định ban đầu?')) {
-        currentCharacterPool = [...DEFAULT_CHARACTERS];
+      if (confirm('Khôi phục lại kho nhân vật Showbiz ban đầu?')) {
+        currentCharacterPool = [...PRESET_THEMES.SHOWBIZ.list];
+        currentThemeName = PRESET_THEMES.SHOWBIZ.name;
         saveCharacterPool();
-        showToast('Đã khôi phục kho nhân vật gốc.');
+        renderModalPresetButtons();
+        showToast('Đã khôi phục kho Showbiz gốc.');
       }
     });
 
@@ -672,7 +782,8 @@
           hostId: id,
           state: 'LOBBY',
           turnIndex: 0,
-          currentQuestion: null, // Lưu câu hỏi hoặc câu đoán tên
+          currentThemeName: currentThemeName,
+          currentQuestion: null,
           lastTurnResult: null,
           players: [
             {
@@ -735,13 +846,56 @@
         broadcastHostState();
       }
 
-      // Người có lượt đặt câu hỏi Có/Không
+      // Xử lý Kick người chơi
+      if (type === 'KICK_PLAYER') {
+        if (senderPeerId !== serverState.hostId) return;
+        const targetId = payload.targetId;
+        if (targetId === serverState.hostId) return;
+
+        const targetPlayer = serverState.players.find(p => p.id === targetId);
+        if (!targetPlayer) return;
+
+        const targetConn = connectionsMap.get(targetId);
+        if (targetConn && targetConn.open) {
+          targetConn.send({ type: 'KICKED', message: 'Bạn đã bị Chủ phòng mời ra khỏi phòng chơi!' });
+          targetConn.close();
+        }
+
+        connectionsMap.delete(targetId);
+        serverState.players = serverState.players.filter(p => p.id !== targetId);
+        serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-rose-950 text-rose-400 text-[10px] font-extrabold mr-1">KICK</span> Chủ phòng đã mời <b class="text-rose-300">${targetPlayer.name}</b> ra khỏi phòng.`);
+
+        if (serverState.state === 'PLAYING') {
+          if (serverState.turnIndex >= serverState.players.length) {
+            serverState.turnIndex = 0;
+          }
+
+          if (serverState.currentQuestion) {
+            if (serverState.currentQuestion.askedById === targetId) {
+              serverState.currentQuestion = null;
+              advanceHostTurn();
+            } else {
+              delete serverState.currentQuestion.answers[targetId];
+              checkPendingVoteCompletion();
+            }
+          }
+
+          if (serverState.players.length < 2) {
+            serverState.state = 'LOBBY';
+            serverState.currentQuestion = null;
+            serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold mr-1">HỆ THỐNG</span> Phòng thiếu người, trở về trạng thái phòng chờ.`);
+          }
+        }
+
+        broadcastHostState();
+      }
+
       if (type === 'ASK_QUESTION') {
         const activePlayer = serverState.players[serverState.turnIndex];
         if (activePlayer.id !== senderPeerId) return;
 
         serverState.currentQuestion = {
-          type: 'QUESTION', // 'QUESTION' | 'GUESS'
+          type: 'QUESTION',
           text: payload.question,
           askedBy: activePlayer.name,
           askedById: activePlayer.id,
@@ -752,7 +906,6 @@
         broadcastHostState();
       }
 
-      // Người có lượt chốt đoán tên -> Mở biểu quyết cho mọi người
       if (type === 'MAKE_GUESS') {
         const activePlayer = serverState.players[serverState.turnIndex];
         if (activePlayer.id !== senderPeerId || serverState.state !== 'PLAYING') return;
@@ -769,70 +922,13 @@
         broadcastHostState();
       }
 
-      // Ghi nhận biểu quyết từ những người khác
       if (type === 'SUBMIT_ANSWER') {
         if (!serverState.currentQuestion) return;
         const activePlayer = serverState.players[serverState.turnIndex];
         if (activePlayer.id === senderPeerId) return;
 
         serverState.currentQuestion.answers[senderPeerId] = payload.answer;
-        
-        const votersNeeded = serverState.players.filter(p => p.id !== activePlayer.id);
-        const answeredKeys = Object.keys(serverState.currentQuestion.answers);
-
-        // Khi đã đủ toàn bộ phiếu biểu quyết
-        if (answeredKeys.length >= votersNeeded.length && votersNeeded.length > 0) {
-          
-          if (serverState.currentQuestion.type === 'GUESS') {
-            // Xử lý kết quả đoán nhân vật
-            const correctVotes = answeredKeys.filter(id => serverState.currentQuestion.answers[id] === 'CORRECT').length;
-            const wrongVotes = answeredKeys.filter(id => serverState.currentQuestion.answers[id] === 'WRONG').length;
-            const isGuessedRight = correctVotes >= wrongVotes && correctVotes > 0;
-
-            if (isGuessedRight) {
-              activePlayer.hasGuessedCorrectly = true;
-              serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-emerald-900/80 text-emerald-300 text-[10px] font-bold mr-1">CHÍNH XÁC</span> Mọi người xác nhận <b class="text-amber-400">${activePlayer.name}</b> đã đoán đúng nhân vật <b class="text-emerald-300">"${activePlayer.character}"</b>!`);
-              
-              if (serverState.players.every(p => p.hasGuessedCorrectly)) {
-                serverState.state = 'ENDED';
-                serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 text-[10px] font-extrabold mr-1">KẾT THÚC</span> Tất cả người chơi đã hoàn thành ván đấu.`);
-              }
-            } else {
-              serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-rose-900/80 text-rose-300 text-[10px] font-bold mr-1">CHƯA ĐÚNG</span> Mọi người xác nhận câu đoán "${serverState.currentQuestion.text}" chưa chính xác.`);
-            }
-
-            serverState.lastTurnResult = {
-              type: 'GUESS',
-              askedBy: activePlayer.name,
-              question: `Đoán: "${serverState.currentQuestion.text}" (Nhân vật thật: ${activePlayer.character})`,
-              answers: { ...serverState.currentQuestion.answers }
-            };
-
-          } else {
-            // Xử lý câu hỏi Có/Không bình thường
-            const summary = answeredKeys.map(id => {
-              const voter = serverState.players.find(p => p.id === id);
-              const ans = serverState.currentQuestion.answers[id];
-              const ansText = ans === 'YES' ? '<b class="text-emerald-400">CÓ</b>' : (ans === 'NO' ? '<b class="text-rose-400">KHÔNG</b>' : '<b class="text-slate-400">KHÔNG RÕ</b>');
-              return `${voter ? voter.name : 'Người chơi'}: ${ansText}`;
-            }).join(', ');
-
-            serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-bold mr-1">KẾT QUẢ</span> <b class="text-amber-400">${activePlayer.name}</b> [${summary}]`);
-            
-            serverState.lastTurnResult = {
-              type: 'QUESTION',
-              askedBy: activePlayer.name,
-              question: serverState.currentQuestion.text,
-              answers: { ...serverState.currentQuestion.answers }
-            };
-          }
-
-          serverState.currentQuestion = null;
-          advanceHostTurn();
-          broadcastHostState();
-          return;
-        }
-
+        checkPendingVoteCompletion();
         broadcastHostState();
       }
 
@@ -846,9 +942,64 @@
       }
     }
 
+    function checkPendingVoteCompletion() {
+      if (!serverState || !serverState.currentQuestion) return;
+      const activePlayer = serverState.players[serverState.turnIndex];
+      const votersNeeded = serverState.players.filter(p => p.id !== activePlayer.id);
+      const answeredKeys = Object.keys(serverState.currentQuestion.answers);
+
+      if (answeredKeys.length >= votersNeeded.length && votersNeeded.length > 0) {
+        if (serverState.currentQuestion.type === 'GUESS') {
+          const correctVotes = answeredKeys.filter(id => serverState.currentQuestion.answers[id] === 'CORRECT').length;
+          const wrongVotes = answeredKeys.filter(id => serverState.currentQuestion.answers[id] === 'WRONG').length;
+          const isGuessedRight = correctVotes >= wrongVotes && correctVotes > 0;
+
+          if (isGuessedRight) {
+            activePlayer.hasGuessedCorrectly = true;
+            serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-emerald-900/80 text-emerald-300 text-[10px] font-bold mr-1">CHÍNH XÁC</span> Mọi người xác nhận <b class="text-amber-400">${activePlayer.name}</b> đã đoán đúng nhân vật <b class="text-emerald-300">"${activePlayer.character}"</b>!`);
+            
+            if (serverState.players.every(p => p.hasGuessedCorrectly)) {
+              serverState.state = 'ENDED';
+              serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 text-[10px] font-extrabold mr-1">KẾT THÚC</span> Tất cả người chơi đã hoàn thành ván đấu.`);
+            }
+          } else {
+            serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-rose-900/80 text-rose-300 text-[10px] font-bold mr-1">CHƯA ĐÚNG</span> Mọi người xác nhận câu đoán "${serverState.currentQuestion.text}" chưa chính xác.`);
+          }
+
+          serverState.lastTurnResult = {
+            type: 'GUESS',
+            askedBy: activePlayer.name,
+            question: `Đoán: "${serverState.currentQuestion.text}" (Nhân vật thật: ${activePlayer.character})`,
+            answers: { ...serverState.currentQuestion.answers }
+          };
+        } else {
+          const summary = answeredKeys.map(id => {
+            const voter = serverState.players.find(p => p.id === id);
+            const ans = serverState.currentQuestion.answers[id];
+            const ansText = ans === 'YES' ? '<b class="text-emerald-400">CÓ</b>' : (ans === 'NO' ? '<b class="text-rose-400">KHÔNG</b>' : '<b class="text-slate-400">KHÔNG RÕ</b>');
+            return `${voter ? voter.name : 'Người chơi'}: ${ansText}`;
+          }).join(', ');
+
+          serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-bold mr-1">KẾT QUẢ</span> <b class="text-amber-400">${activePlayer.name}</b> [${summary}]`);
+          
+          serverState.lastTurnResult = {
+            type: 'QUESTION',
+            askedBy: activePlayer.name,
+            question: serverState.currentQuestion.text,
+            answers: { ...serverState.currentQuestion.answers }
+          };
+        }
+
+        serverState.currentQuestion = null;
+        advanceHostTurn();
+      }
+    }
+
     function advanceHostTurn() {
       let attempts = 0;
       const totalPlayers = serverState.players.length;
+      if (totalPlayers === 0) return;
+
       do {
         serverState.turnIndex = (serverState.turnIndex + 1) % totalPlayers;
         attempts++;
@@ -865,13 +1016,26 @@
 
       const leaving = serverState.players.find(p => p.id === peerId);
       if (leaving) {
-        serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold mr-1">RỜI PHÒNG</span> <b class="text-slate-300">${leaving.name}</b> đã thoát.`);
+        serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold mr-1">RỜI PHÒNG</span> <b class="text-slate-300">${leaving.name}</b> đã ngắt kết nối.`);
       }
       serverState.players = serverState.players.filter(p => p.id !== peerId);
 
       if (serverState.turnIndex >= serverState.players.length) {
         serverState.turnIndex = 0;
       }
+
+      if (serverState.state === 'PLAYING') {
+        if (serverState.currentQuestion) {
+          if (serverState.currentQuestion.askedById === peerId) {
+            serverState.currentQuestion = null;
+            advanceHostTurn();
+          } else {
+            delete serverState.currentQuestion.answers[peerId];
+            checkPendingVoteCompletion();
+          }
+        }
+      }
+
       broadcastHostState();
     }
 
@@ -884,11 +1048,11 @@
           hostId: serverState.hostId,
           isHost: serverState.hostId === p.id,
           state: serverState.state,
+          currentThemeName: serverState.currentThemeName || currentThemeName,
           turnIndex: serverState.turnIndex,
           activePlayerId: serverState.players[serverState.turnIndex]?.id,
           currentQuestion: serverState.currentQuestion ? {
             ...serverState.currentQuestion,
-            // Ẩn tên thật với chính người đang hỏi/đoán
             actualCharacter: (serverState.currentQuestion.askedById === p.id && !p.hasGuessedCorrectly)
               ? '???'
               : serverState.currentQuestion.actualCharacter
@@ -942,6 +1106,9 @@
         hostConnection.on('data', (data) => {
           if (data.type === 'STATE_UPDATE') {
             renderGameState(data.payload);
+          } else if (data.type === 'KICKED') {
+            alert(data.message || 'Bạn đã bị Chủ phòng mời ra khỏi phòng!');
+            location.reload();
           } else if (data.type === 'ERROR') {
             showToast(data.message);
           }
@@ -1004,7 +1171,7 @@
         hostSettings.classList.remove('hidden');
         btnStartGame.classList.remove('hidden');
         waitHostMsg.classList.add('hidden');
-        badgeRole.textContent = 'Chủ phòng';
+        badgeRole.textContent = '👑 Chủ phòng';
         badgeRole.className = 'px-3.5 py-1 bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold rounded-full';
       } else {
         hostSettings.classList.add('hidden');
@@ -1061,6 +1228,13 @@
       }
     }
 
+    window.kickPlayer = function(targetId, targetName) {
+      if (!isHost) return;
+      if (confirm(`Bạn có chắc chắn muốn mời [${targetName}] ra khỏi phòng không?`)) {
+        sendAction('KICK_PLAYER', { targetId });
+      }
+    };
+
     btnSendQuestion.addEventListener('click', () => {
       const q = inputQuestion.value.trim();
       if (!q) return;
@@ -1088,13 +1262,12 @@
     });
 
     // ==========================================
-    // QUY TRÌNH BIỂU QUYẾT 2 BƯỚC (HỎI & ĐOÁN TÊN)
+    // QUY TRÌNH BIỂU QUYẾT 2 BƯỚC
     // ==========================================
     window.selectVoteOption = function(answer) {
       if (hasVotedCurrentQuestion) return;
       selectedVoteOption = answer;
 
-      // Xóa highlight
       document.querySelectorAll('.vote-opt-btn').forEach(btn => {
         btn.classList.remove('ring-2', 'ring-amber-400', 'ring-emerald-400', 'ring-rose-400', 'bg-slate-700');
       });
@@ -1152,6 +1325,9 @@
 
     function renderGameState(data) {
       currentRoomCode = data.roomCode;
+      if (data.currentThemeName) {
+        badgeCurrentTheme.textContent = `Chủ đề: ${data.currentThemeName}`;
+      }
 
       if (data.state === 'LOBBY') {
         screenAuth.classList.add('hidden');
@@ -1160,12 +1336,18 @@
 
         lobbyPlayerCount.textContent = data.players.length;
         lobbyPlayerList.innerHTML = data.players.map(p => `
-          <div class="bg-slate-950/80 border ${p.isYou ? 'border-indigo-500/80 ring-1 ring-indigo-500/30' : 'border-slate-800'} p-3.5 rounded-2xl text-center relative overflow-hidden">
-            <div class="font-extrabold text-base text-slate-100 truncate">${p.name}</div>
-            <div class="mt-1 flex items-center justify-center gap-1.5">
+          <div class="bg-slate-950/80 border ${p.isYou ? 'border-indigo-500/80 ring-1 ring-indigo-500/30' : 'border-slate-800'} p-3 rounded-2xl flex items-center justify-between">
+            <div class="flex items-center gap-2 overflow-hidden">
+              <span class="font-extrabold text-sm text-slate-100 truncate">${p.name}</span>
               ${p.isYou ? '<span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold text-[10px]">Bạn</span>' : ''}
-              ${p.id === data.hostId ? '<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-[10px]">Chủ phòng</span>' : ''}
+              ${p.id === data.hostId ? '<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-[10px]">Host</span>' : ''}
             </div>
+
+            ${(data.isHost && p.id !== data.hostId) ? `
+              <button onclick="kickPlayer('${p.id}', '${p.name}')" class="px-2 py-1 bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30 rounded-lg text-xs font-bold transition flex-shrink-0">
+                ✕ Đá
+              </button>
+            ` : ''}
           </div>
         `).join('');
       } else if (data.state === 'PLAYING' || data.state === 'ENDED') {
@@ -1209,7 +1391,13 @@
           return `
             <div class="relative border-2 ${cardBorderClass} backdrop-blur-md rounded-2xl p-3.5 flex flex-col items-center text-center transition-all duration-300">
               
-              <div class="w-full flex items-center justify-center gap-1.5 mb-2.5 pb-2 border-b border-slate-800">
+              ${(data.isHost && p.id !== data.hostId) ? `
+                <button onclick="kickPlayer('${p.id}', '${p.name}')" title="Mời người này ra" class="absolute top-2 right-2 w-5 h-5 rounded-full bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white text-[10px] font-bold flex items-center justify-center transition border border-slate-700">
+                  ✕
+                </button>
+              ` : ''}
+
+              <div class="w-full flex items-center justify-center gap-1.5 mb-2.5 pb-2 border-b border-slate-800 pr-4 pl-1">
                 <span class="text-sm font-black text-slate-100 truncate tracking-wide">
                   ${p.name}
                 </span>
@@ -1267,7 +1455,7 @@
           panelMyTurn.classList.add('hidden');
         }
 
-        // Bảng Biểu quyết (Xử lý linh hoạt giữa Câu hỏi Có/Không và Câu Đoán Tên)
+        // Bảng Biểu quyết
         if (data.currentQuestion) {
           const currentKey = `${data.currentQuestion.type}_${data.currentQuestion.text}`;
           if (currentKey !== lastRenderedQuestionKey) {
@@ -1283,7 +1471,6 @@
             votePanelTitle.className = 'text-xs font-black text-amber-400 uppercase tracking-wider animate-pulse';
             currentQuestionText.innerHTML = `<span class="text-slate-400 text-xs block mb-1">Người chơi <b class="text-amber-400 font-bold">${data.currentQuestion.askedBy}</b> đoán mình là:</span> <span class="text-lg font-black text-white">"${data.currentQuestion.text}"</span>`;
             
-            // Hiện nhân vật thật cho người bình chọn xem
             if (!isMyTurn) {
               guessVerifyExtra.classList.remove('hidden');
               guessRealCharName.textContent = data.currentQuestion.actualCharacter;
