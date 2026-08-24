@@ -102,8 +102,8 @@
           </button>
         </div>
       </div>
-      <div class="flex items-center gap-2">
-        <div id="badge-current-theme" class="px-3.5 py-1.5 bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 text-xs font-bold rounded-full">
+      <div class="flex items-center gap-2 flex-wrap">
+        <div id="badge-current-theme" class="px-3.5 py-1.5 bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 text-xs font-bold rounded-full max-w-xs truncate">
           Chủ đề: Showbiz
         </div>
         <div id="badge-role" class="px-3.5 py-1.5 bg-slate-800 border border-slate-700 text-slate-300 text-xs font-bold rounded-full">
@@ -125,13 +125,13 @@
 
     <!-- Khu vực tùy chỉnh & Gói chủ đề (Chỉ Host thấy) -->
     <div id="host-settings" class="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 mb-5 hidden space-y-3">
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h4 class="text-xs font-extrabold uppercase tracking-wider text-amber-400">Kho nhân vật ván đấu</h4>
-          <p class="text-[11px] text-slate-400">Đang có <b id="lobby-char-count" class="text-amber-400">0</b> nhân vật sẵn sàng.</p>
+          <p class="text-[11px] text-slate-400">Đang có <b id="lobby-char-count" class="text-amber-400">0</b> nhân vật sẵn sàng từ các chủ đề đã chọn.</p>
         </div>
         <button id="btn-open-char-modal" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black transition shadow-lg shadow-amber-500/20 flex items-center gap-1.5 active:scale-95">
-          <span>📦 Đổi Chủ Đề / Sửa Kho</span>
+          <span>📦 Chọn Nhiều Chủ Đề / Sửa Kho</span>
         </button>
       </div>
     </div>
@@ -301,7 +301,7 @@
     </div>
   </div>
 
-  <!-- MODAL: QUẢN LÝ KHO NHÂN VẬT & CHỌN PRESET -->
+  <!-- MODAL: QUẢN LÝ KHO NHÂN VẬT & CHỌN NHIỀU PRESET -->
   <div id="modal-char-manager" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4 hidden">
     <div class="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col max-h-[90vh]">
       
@@ -311,16 +311,23 @@
           <h3 class="text-base sm:text-lg font-black text-amber-400 flex items-center gap-2">
             <span>📦</span> KHO NHÂN VẬT & GÓI CHỦ ĐỀ
           </h3>
-          <p class="text-xs text-slate-400">Chọn gói chủ đề có sẵn hoặc tự thêm tên tùy thích.</p>
+          <p class="text-xs text-slate-400">Chọn cùng lúc nhiều chủ đề hoặc thêm nhân vật tùy thích.</p>
         </div>
         <button id="btn-close-char-modal" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition">✕</button>
       </div>
 
-      <!-- PHẦN 1: CÁC GÓI CHỦ ĐỀ PRESET NỔI BẬT TRONG MODAL -->
-      <div class="bg-slate-950/90 p-3 rounded-2xl border border-amber-500/30 mb-3">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-black uppercase tracking-wider text-amber-400">⚡ Chọn nhanh gói chủ đề (1 chạm)</span>
-          <span id="modal-active-theme-pill" class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold text-[10px] border border-amber-500/30"></span>
+      <!-- PHẦN 1: CÁC GÓI CHỦ ĐỀ MULTI-SELECT -->
+      <div class="bg-slate-950/90 p-3.5 rounded-2xl border border-amber-500/30 mb-3">
+        <div class="flex items-center justify-between mb-2.5">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-black uppercase tracking-wider text-amber-400">⚡ Chọn nhiều gói chủ đề</span>
+            <span id="modal-active-theme-pill" class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold text-[10px] border border-amber-500/30"></span>
+          </div>
+          <div class="flex items-center gap-2 text-[11px]">
+            <button id="btn-select-all-presets" class="text-amber-400 hover:text-amber-300 font-bold hover:underline">Chọn tất cả</button>
+            <span class="text-slate-600">•</span>
+            <button id="btn-deselect-all-presets" class="text-slate-400 hover:text-slate-300 font-medium hover:underline">Bỏ chọn hết</button>
+          </div>
         </div>
         <div id="modal-preset-buttons" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
       </div>
@@ -352,11 +359,11 @@
 
       <!-- PHẦN 3: DANH SÁCH THẺ NHÂN VẬT ĐANG CÓ -->
       <div class="flex items-center justify-between text-xs text-slate-400 pb-1.5 px-1">
-        <span>Danh sách đang chọn: <b id="modal-total-chars" class="text-amber-400 font-extrabold">0</b> nhân vật</span>
+        <span>Tổng danh sách đang có: <b id="modal-total-chars" class="text-amber-400 font-extrabold">0</b> nhân vật</span>
         <div class="flex gap-2 text-[11px]">
           <button id="btn-export-chars" class="hover:text-slate-200 underline">Copy tất cả</button>
           <span>•</span>
-          <button id="btn-reset-default-chars" class="text-rose-400 hover:text-rose-300 underline">Reset Showbiz gốc</button>
+          <button id="btn-reset-default-chars" class="text-rose-400 hover:text-rose-300 underline">Khôi phục mặc định</button>
         </div>
       </div>
 
@@ -378,6 +385,7 @@
     const PRESET_THEMES = {
       SHOWBIZ: {
         id: 'SHOWBIZ',
+        shortName: 'Showbiz',
         name: '🌟 Showbiz Việt & Quốc Tế',
         list: [
           'Sơn Tùng M-TP', 'Trấn Thành', 'Trường Giang', 'Mỹ Tâm', 'Đàm Vĩnh Hưng', 'Hồ Ngọc Hà',
@@ -401,6 +409,7 @@
       },
       ANIME: {
         id: 'ANIME',
+        shortName: 'Anime',
         name: '⚔️ Anime & Manga',
         list: [
           'Doraemon', 'Nobita', 'Shizuka', 'Chaien', 'Suneo', 'Conan', 'Ran Mori', 'Kaito Kid',
@@ -411,6 +420,7 @@
       },
       HEROES: {
         id: 'HEROES',
+        shortName: 'Siêu Anh Hùng',
         name: '🦸 Siêu Anh Hùng Marvel/DC',
         list: [
           'Spider-Man', 'Iron Man', 'Captain America', 'Thor', 'Hulk', 'Thanos', 'Black Widow',
@@ -420,6 +430,7 @@
       },
       STREAMER: {
         id: 'STREAMER',
+        shortName: 'Streamer/Meme',
         name: '🎮 Streamer & Meme',
         list: [
           'Độ Mixi', 'PewPew', 'Cris Devil Gamer', 'Xemesis', 'MisThy', 'Linh Ngọc Đàm',
@@ -429,6 +440,7 @@
       },
       CARTOON: {
         id: 'CARTOON',
+        shortName: 'Hoạt Hình',
         name: '🏰 Hoạt Hình & Cổ Tích',
         list: [
           'Elsa', 'Anna', 'Shrek', 'Mickey Mouse', 'Donald Duck', 'Tom', 'Jerry',
@@ -438,53 +450,106 @@
       }
     };
 
-    const STORAGE_KEY = 'whoami_custom_character_vault';
-    const THEME_KEY = 'whoami_selected_theme_name';
+    const STORAGE_KEY_PRESETS = 'whoami_selected_preset_keys';
+    const STORAGE_KEY_CUSTOM = 'whoami_custom_character_list';
+    
+    let selectedPresetKeys = ['SHOWBIZ'];
+    let customCharacters = [];
     let currentCharacterPool = [];
-    let currentThemeName = PRESET_THEMES.SHOWBIZ.name;
+    let currentThemeName = 'Showbiz';
 
     function loadCharacterPool() {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      const savedTheme = localStorage.getItem(THEME_KEY);
-      if (savedTheme) currentThemeName = savedTheme;
+      const savedPresets = localStorage.getItem(STORAGE_KEY_PRESETS);
+      const savedCustom = localStorage.getItem(STORAGE_KEY_CUSTOM);
 
-      if (saved) {
+      if (savedPresets) {
         try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            currentCharacterPool = parsed;
-            return;
-          }
+          const parsed = JSON.parse(savedPresets);
+          if (Array.isArray(parsed)) selectedPresetKeys = parsed;
         } catch (e) {
-          console.error(e);
+          selectedPresetKeys = ['SHOWBIZ'];
         }
       }
-      currentCharacterPool = [...PRESET_THEMES.SHOWBIZ.list];
-      currentThemeName = PRESET_THEMES.SHOWBIZ.name;
+
+      if (savedCustom) {
+        try {
+          const parsed = JSON.parse(savedCustom);
+          if (Array.isArray(parsed)) customCharacters = parsed;
+        } catch (e) {
+          customCharacters = [];
+        }
+      }
+
+      rebuildCharacterPool();
+    }
+
+    function rebuildCharacterPool() {
+      const combined = [];
+
+      selectedPresetKeys.forEach(key => {
+        if (PRESET_THEMES[key]) {
+          combined.push(...PRESET_THEMES[key].list);
+        }
+      });
+
+      combined.push(...customCharacters);
+
+      // Loại bỏ các tên trùng lặp (giữ nguyên chữ hoa/thường)
+      const seen = new Set();
+      currentCharacterPool = combined.filter(name => {
+        const lower = name.trim().toLowerCase();
+        if (!lower || seen.has(lower)) return false;
+        seen.add(lower);
+        return true;
+      });
+
+      // Tạo chuỗi mô tả chủ đề
+      const names = selectedPresetKeys.map(k => PRESET_THEMES[k]?.shortName).filter(Boolean);
+      if (customCharacters.length > 0) names.push('Tự chọn');
+
+      if (names.length === 0) {
+        currentThemeName = 'Trống (Hãy chọn chủ đề)';
+      } else if (names.length <= 2) {
+        currentThemeName = names.join(' + ');
+      } else {
+        currentThemeName = `${names.slice(0, 2).join(' + ')} (+${names.length - 2})`;
+      }
+
       saveCharacterPool();
     }
 
     function saveCharacterPool() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(currentCharacterPool));
-      localStorage.setItem(THEME_KEY, currentThemeName);
+      localStorage.setItem(STORAGE_KEY_PRESETS, JSON.stringify(selectedPresetKeys));
+      localStorage.setItem(STORAGE_KEY_CUSTOM, JSON.stringify(customCharacters));
       updateCharacterVaultUI();
     }
 
-    function applyPresetTheme(presetKey) {
-      const preset = PRESET_THEMES[presetKey];
-      if (!preset) return;
-      currentCharacterPool = [...preset.list];
-      currentThemeName = preset.name;
-      saveCharacterPool();
+    // Toggle bật / tắt một gói chủ đề (Multi-select)
+    window.togglePresetTheme = function(presetKey) {
+      if (!PRESET_THEMES[presetKey]) return;
+
+      const idx = selectedPresetKeys.indexOf(presetKey);
+      if (idx > -1) {
+        // Nếu muốn bỏ chọn nhưng không còn gói nào khác và cũng không có custom
+        if (selectedPresetKeys.length === 1 && customCharacters.length === 0) {
+          return showToast('Cần giữ ít nhất 1 chủ đề hoặc nạp nhân vật tùy chọn!');
+        }
+        selectedPresetKeys.splice(idx, 1);
+        showToast(`Đã bỏ chọn gói [${PRESET_THEMES[presetKey].shortName}]`);
+      } else {
+        selectedPresetKeys.push(presetKey);
+        showToast(`Đã thêm gói [${PRESET_THEMES[presetKey].shortName}]!`);
+      }
+
+      rebuildCharacterPool();
       renderModalPresetButtons();
-      showToast(`Đã nạp gói [${preset.name}] (${preset.list.length} nhân vật)!`);
-      
+
       if (isHost && serverState) {
         serverState.currentThemeName = currentThemeName;
-        serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-indigo-900/80 text-indigo-300 text-[10px] font-bold mr-1">CHỦ ĐỀ</span> Chủ phòng đã chuyển sang gói: <b class="text-amber-400">${currentThemeName}</b>.`);
+        serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-indigo-900/80 text-indigo-300 text-[10px] font-bold mr-1">CHỦ ĐỀ</span> Cập nhật kho: <b class="text-amber-400">${currentThemeName}</b> (${currentCharacterPool.length} nhân vật).`);
         broadcastHostState();
       }
-    }
+    };
 
     // ==========================================
     // DOM ELEMENTS
@@ -516,6 +581,9 @@
     const btnSaveCharModal = document.getElementById('btn-save-char-modal');
     const modalPresetButtons = document.getElementById('modal-preset-buttons');
     const modalActiveThemePill = document.getElementById('modal-active-theme-pill');
+    const btnSelectAllPresets = document.getElementById('btn-select-all-presets');
+    const btnDeselectAllPresets = document.getElementById('btn-deselect-all-presets');
+
     const inputSheetUrl = document.getElementById('input-sheet-url');
     const btnSyncSheet = document.getElementById('btn-sync-sheet');
     const inputAddChar = document.getElementById('input-add-char');
@@ -618,24 +686,50 @@
       return arr;
     }
 
-    // Render danh sách Preset bên trong Modal
+    // Render danh sách Preset bên trong Modal (Hỗ trợ Multi-select)
     function renderModalPresetButtons() {
-      modalActiveThemePill.textContent = currentThemeName;
+      modalActiveThemePill.textContent = `${selectedPresetKeys.length} gói đang chọn`;
       modalPresetButtons.innerHTML = Object.keys(PRESET_THEMES).map(key => {
         const preset = PRESET_THEMES[key];
-        const isActive = currentThemeName === preset.name;
+        const isSelected = selectedPresetKeys.includes(key);
         return `
-          <button onclick="applyPresetTheme('${key}')" class="p-2.5 rounded-xl border text-xs font-bold transition text-left flex flex-col justify-between ${
-            isActive 
-              ? 'bg-amber-500/25 border-amber-400 text-amber-300 ring-2 ring-amber-400/50 shadow-md' 
-              : 'bg-slate-900 border-slate-700/80 text-slate-300 hover:border-slate-500 hover:bg-slate-850'
+          <button onclick="togglePresetTheme('${key}')" class="p-3 rounded-2xl border text-xs font-bold transition text-left flex flex-col justify-between relative group ${
+            isSelected 
+              ? 'bg-amber-500/20 border-amber-400 text-amber-300 ring-2 ring-amber-400/40 shadow-lg shadow-amber-500/10' 
+              : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600 hover:bg-slate-850 hover:text-slate-200'
           }">
-            <span class="truncate font-black">${preset.name}</span>
-            <span class="text-[10px] text-slate-400 font-normal mt-0.5">${preset.list.length} nhân vật</span>
+            <div class="flex items-center justify-between w-full mb-1">
+              <span class="truncate font-black text-[13px]">${preset.name}</span>
+              <span class="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black border ${
+                isSelected 
+                  ? 'bg-amber-400 text-slate-950 border-amber-300' 
+                  : 'border-slate-700 text-transparent group-hover:border-slate-500'
+              }">✓</span>
+            </div>
+            <span class="text-[10px] ${isSelected ? 'text-amber-400/80 font-semibold' : 'text-slate-500'}">${preset.list.length} nhân vật</span>
           </button>
         `;
       }).join('');
     }
+
+    btnSelectAllPresets.addEventListener('click', () => {
+      selectedPresetKeys = Object.keys(PRESET_THEMES);
+      rebuildCharacterPool();
+      renderModalPresetButtons();
+      showToast(`Đã chọn tất cả ${selectedPresetKeys.length} gói chủ đề!`);
+    });
+
+    btnDeselectAllPresets.addEventListener('click', () => {
+      if (customCharacters.length === 0) {
+        selectedPresetKeys = ['SHOWBIZ'];
+        showToast('Giữ lại gói Showbiz vì danh sách tự chọn đang trống!');
+      } else {
+        selectedPresetKeys = [];
+        showToast('Đã bỏ chọn tất cả gói mẫu (Đang dùng nhân vật tự chọn)');
+      }
+      rebuildCharacterPool();
+      renderModalPresetButtons();
+    });
 
     // ==========================================
     // LOGIC ĐỒNG BỘ GOOGLE SHEETS & QUẢN LÝ KHO
@@ -657,10 +751,14 @@
       if (currentCharacterPool.length <= 2) {
         return showToast('Cần giữ lại ít nhất 2 nhân vật trong kho!');
       }
+      const charToRemove = currentCharacterPool[index];
+      
+      // Xóa khỏi custom nếu có
+      customCharacters = customCharacters.filter(c => c.toLowerCase() !== charToRemove.toLowerCase());
+      
+      // Xóa trực tiếp khỏi pool hiện tại
       currentCharacterPool.splice(index, 1);
-      currentThemeName = 'Tùy biến riêng';
       saveCharacterPool();
-      renderModalPresetButtons();
     };
 
     function addCharactersFromInput() {
@@ -672,19 +770,18 @@
 
       newNames.forEach(name => {
         if (!currentCharacterPool.some(c => c.toLowerCase() === name.toLowerCase())) {
-          currentCharacterPool.unshift(name);
+          customCharacters.unshift(name);
           addedCount++;
         }
       });
 
       inputAddChar.value = '';
       if (addedCount > 0) {
-        currentThemeName = 'Tùy biến riêng';
-        saveCharacterPool();
+        rebuildCharacterPool();
         renderModalPresetButtons();
         showToast(`Đã thêm ${addedCount} nhân vật vào kho!`);
       } else {
-        showToast('Tên nhân vật này đã có sẵn.');
+        showToast('Nhân vật này đã tồn tại trong kho.');
       }
     }
 
@@ -712,17 +809,18 @@
 
         if (lines.length === 0) return showToast('Không tìm thấy danh sách tên trong bảng!');
 
+        let addedCount = 0;
         lines.forEach(name => {
           if (name.length > 0 && !currentCharacterPool.some(c => c.toLowerCase() === name.toLowerCase())) {
-            currentCharacterPool.push(name);
+            customCharacters.push(name);
+            addedCount++;
           }
         });
 
-        currentThemeName = 'Google Sheet Sync';
-        saveCharacterPool();
+        rebuildCharacterPool();
         renderModalPresetButtons();
         inputSheetUrl.value = '';
-        showToast(`Đã đồng bộ thành công ${lines.length} nhân vật từ Google Sheet!`);
+        showToast(`Đã đồng bộ thành công ${addedCount} nhân vật từ Google Sheet!`);
       } catch (err) {
         showToast('Lỗi: Hãy đảm bảo Google Sheet đã bật "Bất kỳ ai có liên kết đều xem được"!');
       }
@@ -745,7 +843,7 @@
 
     btnSaveCharModal.addEventListener('click', () => {
       modalCharManager.classList.add('hidden');
-      showToast('Đã lưu kho nhân vật thành công!');
+      showToast('Đã lưu thiết lập chủ đề thành công!');
     });
 
     btnExportChars.addEventListener('click', () => {
@@ -756,12 +854,12 @@
     });
 
     btnResetDefaultChars.addEventListener('click', () => {
-      if (confirm('Khôi phục lại kho nhân vật Showbiz ban đầu?')) {
-        currentCharacterPool = [...PRESET_THEMES.SHOWBIZ.list];
-        currentThemeName = PRESET_THEMES.SHOWBIZ.name;
-        saveCharacterPool();
+      if (confirm('Khôi phục lại về gói Showbiz mặc định ban đầu?')) {
+        selectedPresetKeys = ['SHOWBIZ'];
+        customCharacters = [];
+        rebuildCharacterPool();
         renderModalPresetButtons();
-        showToast('Đã khôi phục kho Showbiz gốc.');
+        showToast('Đã khôi phục gói Showbiz ban đầu.');
       }
     });
 
@@ -1189,7 +1287,7 @@
       }
 
       if (currentCharacterPool.length < serverState.players.length) {
-        return showToast(`Kho nhân vật hiện có (${currentCharacterPool.length}) ít hơn số người chơi (${serverState.players.length}). Vui lòng thêm nhân vật!`);
+        return showToast(`Kho nhân vật hiện có (${currentCharacterPool.length}) ít hơn số người chơi (${serverState.players.length}). Vui lòng chọn thêm gói chủ đề!`);
       }
 
       const shuffled = shuffle(currentCharacterPool);
@@ -1370,8 +1468,8 @@
         } else {
           turnBanner.textContent = isMyTurn ? 'ĐANG LÀ LƯỢT CỦA BẠN' : `Lượt của: ${activePlayer?.name || '...'}`;
           turnBanner.className = `text-xs sm:text-sm font-bold px-4 py-1.5 rounded-full transition-all ${
-            isMyTurn
-              ? 'bg-amber-400 text-slate-950 font-black shadow-lg shadow-amber-400/30 animate-bounce'
+            isMyTurn 
+              ? 'bg-amber-400 text-slate-950 font-black shadow-lg shadow-amber-400/30 animate-bounce' 
               : 'bg-slate-800 text-slate-300 border border-slate-700'
           }`;
         }
