@@ -131,7 +131,7 @@
           <p class="text-[11px] text-slate-400">Đang có <b id="lobby-char-count" class="text-amber-400">0</b> nhân vật sẵn sàng từ các chủ đề đã chọn.</p>
         </div>
         <button id="btn-open-char-modal" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black transition shadow-lg shadow-amber-500/20 flex items-center gap-1.5 active:scale-95">
-          <span>📦 Chọn Nhiều Chủ Đề / Sửa Kho</span>
+          <span>📦 Chọn Gói Chủ Đề / Sửa Kho</span>
         </button>
       </div>
     </div>
@@ -380,78 +380,82 @@
 
   <script>
     // ==========================================
-    // CÁC GÓI CHỦ ĐỀ CÓ SẴN (PRESET THEMES)
+    // CÁC GÓI CHỦ ĐỀ ĐÃ TINH LỌC VÀ PHÂN TÁCH RÕ RÀNG
     // ==========================================
     const PRESET_THEMES = {
       SHOWBIZ: {
         id: 'SHOWBIZ',
         shortName: 'Showbiz',
-        name: '🌟 Showbiz Việt & Quốc Tế',
+        name: '🌟 Showbiz & Nghệ Sĩ',
         list: [
           'Sơn Tùng M-TP', 'Trấn Thành', 'Trường Giang', 'Mỹ Tâm', 'Đàm Vĩnh Hưng', 'Hồ Ngọc Hà',
-          'HIEUTHUHAI', 'Mono', 'Soobin Hoàng Sơn', 'Đen Vâu', 'Binz', 'Karik', 'Suboi', 'Rhymastic',
-          'JustaTee', 'B Ray', 'Hòa Minzy', 'Đức Phúc', 'Erik', 'Chi Pu', 'Ninh Dương Lan Ngọc',
-          'Diệu Nhi', 'Lê Dương Bảo Lâm', 'Cris Devil Gamer', 'Độ Mixi', 'PewPew', 'Thùy Tiên',
-          'H\'Hen Niê', 'Hoàng Thùy Linh', 'Wren Evans', 'Quang Hùng MasterD', 'Rhyder', 'Captain Boy',
-          'Pháp Kiều', 'HURRYKNG', 'Negav', 'Isaac', 'Noo Phước Thịnh', 'Đông Nhi', 'Bích Phương',
-          'Vũ', 'Tuấn Hưng', 'Bằng Kiều', 'Hoài Linh', 'Việt Hương', 'Thu Trang', 'Tiến Luật',
-          'Anh Tú Atus', 'Thúy Ngân', 'Song Luân', 'Taylor Swift', 'Justin Bieber', 'Michael Jackson',
-          'Ariana Grande', 'Beyoncé', 'Rihanna', 'Bruno Mars', 'Lady Gaga', 'Billie Eilish',
-          'Ed Sheeran', 'Eminem', 'Snoop Dogg', 'Drake', 'The Weeknd', 'Katy Perry', 'Adele',
-          'Dua Lipa', 'Selena Gomez', 'Charlie Puth', 'Post Malone', 'Leonardo DiCaprio', 'Tom Cruise',
-          'Johnny Depp', 'Brad Pitt', 'Angelina Jolie', 'Keanu Reeves', 'Robert Downey Jr.',
-          'Dwayne Johnson (The Rock)', 'Will Smith', 'Zendaya', 'Scarlett Johansson', 'Emma Watson',
-          'Tom Holland', 'Chris Evans', 'Chris Hemsworth', 'Thành Long (Jackie Chan)', 'Châu Tinh Trì',
-          'Chân Tử Đan', 'Lưu Đức Hoa', 'Dương Mịch', 'Triệu Lệ Dĩnh', 'G-Dragon', 'Lisa (Blackpink)',
-          'Jennie (Blackpink)', 'Rosé (Blackpink)', 'Jisoo (Blackpink)', 'Jungkook (BTS)', 'V (BTS)',
-          'IU', 'PSY', 'Song Joong Ki', 'Song Hye Kyo', 'Lee Min Ho', 'Hyun Bin', 'Son Ye Jin'
+          'HIEUTHUHAI', 'Mono', 'Soobin Hoàng Sơn', 'Đen Vâu', 'Binz', 'Karik', 'JustaTee',
+          'Hòa Minzy', 'Đức Phúc', 'Erik', 'Chi Pu', 'Ninh Dương Lan Ngọc', 'Diệu Nhi',
+          'Lê Dương Bảo Lâm', 'Thùy Tiên', 'H\'Hen Niê', 'Hoàng Thùy Linh', 'Quang Hùng MasterD',
+          'Rhyder', 'Isaac', 'Noo Phước Thịnh', 'Vũ', 'Thu Trang', 'Tiến Luật', 'Anh Tú Atus',
+          'Taylor Swift', 'Justin Bieber', 'Michael Jackson', 'Bruno Mars', 'Lady Gaga',
+          'Billie Eilish', 'Ed Sheeran', 'Leonardo DiCaprio', 'Tom Cruise', 'Johnny Depp',
+          'Brad Pitt', 'Robert Downey Jr.', 'Dwayne Johnson (The Rock)', 'Will Smith', 'Tom Holland',
+          'Thành Long (Jackie Chan)', 'Châu Tinh Trì', 'G-Dragon', 'Lisa (Blackpink)',
+          'Jennie (Blackpink)', 'Jungkook (BTS)', 'IU', 'Lee Min Ho'
+        ]
+      },
+      STREAMER: {
+        id: 'STREAMER',
+        shortName: 'Streamer/Creator',
+        name: '🎮 Streamer & Content Creator',
+        list: [
+          'Độ Mixi', 'PewPew', 'Cris Devil Gamer', 'Xemesis', 'MisThy', 'Linh Ngọc Đàm',
+          'Thầy Giáo Ba', 'Optimus', 'SofM', 'QNT', 'Rambo', 'Mimosa', 'MrBeast',
+          'IShowSpeed', 'Khaby Lame', 'PewDiePie', 'Ninja', 'Kai Cenat'
+        ]
+      },
+      MEME: {
+        id: 'MEME',
+        shortName: 'Internet Meme',
+        name: '🐸 Internet Meme Toàn Cầu',
+        list: [
+          'Pepe The Frog', 'Doge (Chó Shiba)', 'GigaChad', 'Cheems', 'Nyan Cat',
+          'Hasbulla', 'Rick Astley (Rickroll)', 'Salt Bae', 'Grumpy Cat (Mèo Quạu)',
+          'Smudge The Cat (Mèo Bàn Ăn)', 'Side-Eye Chloe (Bé Gái Liếc Mắt)', 'Sad Keanu'
+        ]
+      },
+      CARTOON: {
+        id: 'CARTOON',
+        shortName: 'Hoạt Hình Chiếu Rạp',
+        name: '🏰 Hoạt Hình Chiếu Rạp (Disney/Pixar)',
+        list: [
+          'Elsa', 'Anna', 'Olaf', 'Mickey Mouse', 'Donald Duck', 'Tom', 'Jerry',
+          'Po (Kung Fu Panda)', 'Woody (Toy Story)', 'Buzz Lightyear', 'Minion',
+          'Simba (Vua Sư Tử)', 'Shrek', 'Thần Đèn Genie (Aladdin)', 'Baymax (Big Hero 6)',
+          'Wall-E', 'Nemo', 'Lightning McQueen (Cars)', 'Judy Hopps (Zootopia)', 'Stitch'
         ]
       },
       ANIME: {
         id: 'ANIME',
-        shortName: 'Anime',
-        name: '⚔️ Anime & Manga',
+        shortName: 'Anime/Manga',
+        name: '⚔️ Anime & Manga Kinh Điển',
         list: [
           'Doraemon', 'Nobita', 'Shizuka', 'Chaien', 'Suneo', 'Conan', 'Ran Mori', 'Kaito Kid',
           'Son Goku', 'Vegeta', 'Naruto', 'Sasuke', 'Kakashi', 'Luffy', 'Zoro', 'Sanji',
-          'Levi Ackerman', 'Tanjiro', 'Nezuko', 'Gojo Satoru', 'Saitama', 'Pikachu',
-          'L (Death Note)', 'Light Yagami', 'Itachi Uchiha', 'Chopper', 'Eren Yeager', 'Killua'
+          'Chopper', 'Levi Ackerman', 'Eren Yeager', 'Tanjiro', 'Nezuko', 'Gojo Satoru',
+          'Saitama', 'Pikachu', 'L (Death Note)'
         ]
       },
       HEROES: {
         id: 'HEROES',
         shortName: 'Siêu Anh Hùng',
-        name: '🦸 Siêu Anh Hùng Marvel/DC',
+        name: '🦸 Siêu Anh Hùng Marvel & DC',
         list: [
           'Spider-Man', 'Iron Man', 'Captain America', 'Thor', 'Hulk', 'Thanos', 'Black Widow',
           'Doctor Strange', 'Loki', 'Deadpool', 'Wolverine', 'Batman', 'Superman', 'Joker',
-          'Wonder Woman', 'Flash', 'Aquaman', 'Black Panther', 'Hawkeye', 'Venom'
-        ]
-      },
-      STREAMER: {
-        id: 'STREAMER',
-        shortName: 'Streamer/Meme',
-        name: '🎮 Streamer & Meme',
-        list: [
-          'Độ Mixi', 'PewPew', 'Cris Devil Gamer', 'Xemesis', 'MisThy', 'Linh Ngọc Đàm',
-          'Thầy Giáo Ba', 'Optimus', 'SofM', 'MrBeast', 'IShowSpeed', 'Khaby Lame',
-          'Hasbulla', 'GigaChad', 'Shrek', 'Pepe The Frog', 'Doge (Shiba)'
-        ]
-      },
-      CARTOON: {
-        id: 'CARTOON',
-        shortName: 'Hoạt Hình',
-        name: '🏰 Hoạt Hình & Cổ Tích',
-        list: [
-          'Elsa', 'Anna', 'Shrek', 'Mickey Mouse', 'Donald Duck', 'Tom', 'Jerry',
-          'Po (Kung Fu Panda)', 'Woody', 'Buzz Lightyear', 'Minion', 'Olaf', 'Simba',
-          'Thạch Sanh', 'Thánh Gióng', 'Tấm', 'Cám', 'Aladdin', 'Pinocchio'
+          'Wonder Woman', 'The Flash', 'Aquaman', 'Black Panther', 'Venom'
         ]
       }
     };
 
-    const STORAGE_KEY_PRESETS = 'whoami_selected_preset_keys';
-    const STORAGE_KEY_CUSTOM = 'whoami_custom_character_list';
+    const STORAGE_KEY_PRESETS = 'whoami_selected_preset_keys_v2';
+    const STORAGE_KEY_CUSTOM = 'whoami_custom_character_list_v2';
     
     let selectedPresetKeys = ['SHOWBIZ'];
     let customCharacters = [];
@@ -465,7 +469,7 @@
       if (savedPresets) {
         try {
           const parsed = JSON.parse(savedPresets);
-          if (Array.isArray(parsed)) selectedPresetKeys = parsed;
+          if (Array.isArray(parsed) && parsed.length > 0) selectedPresetKeys = parsed;
         } catch (e) {
           selectedPresetKeys = ['SHOWBIZ'];
         }
@@ -530,7 +534,6 @@
 
       const idx = selectedPresetKeys.indexOf(presetKey);
       if (idx > -1) {
-        // Nếu muốn bỏ chọn nhưng không còn gói nào khác và cũng không có custom
         if (selectedPresetKeys.length === 1 && customCharacters.length === 0) {
           return showToast('Cần giữ ít nhất 1 chủ đề hoặc nạp nhân vật tùy chọn!');
         }
@@ -686,7 +689,7 @@
       return arr;
     }
 
-    // Render danh sách Preset bên trong Modal (Hỗ trợ Multi-select)
+    // Render danh sách Preset bên trong Modal
     function renderModalPresetButtons() {
       modalActiveThemePill.textContent = `${selectedPresetKeys.length} gói đang chọn`;
       modalPresetButtons.innerHTML = Object.keys(PRESET_THEMES).map(key => {
@@ -752,11 +755,7 @@
         return showToast('Cần giữ lại ít nhất 2 nhân vật trong kho!');
       }
       const charToRemove = currentCharacterPool[index];
-      
-      // Xóa khỏi custom nếu có
       customCharacters = customCharacters.filter(c => c.toLowerCase() !== charToRemove.toLowerCase());
-      
-      // Xóa trực tiếp khỏi pool hiện tại
       currentCharacterPool.splice(index, 1);
       saveCharacterPool();
     };
