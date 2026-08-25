@@ -75,4 +75,52 @@ const PRESET_THEMES = {
   }
 };
 
+// ==========================================
+// KHO CÂU HỎI GỢI Ý CHIẾN THUẬT
+// ==========================================
+const QUESTION_SUGGESTIONS = {
+  GENDER_APPEARANCE: {
+    name: '👤 Giới tính & Ngoại hình',
+    list: [
+      'Tôi có phải là nam không?',
+      'Tôi có phải là nữ không?',
+      'Tôi có đeo kính không?',
+      'Tôi có tóc dài không?',
+      'Tôi có râu không?',
+      'Tôi có tóc màu sáng (vàng, bạch kim, đỏ...) không?'
+    ]
+  },
+  NATURE_REALITY: {
+    name: '🌍 Nguồn gốc & Bản chất',
+    list: [
+      'Tôi có phải là người thật không?',
+      'Tôi có phải là nhân vật hư cấu/hoạt hình không?',
+      'Tôi có còn sống không?',
+      'Tôi có phải là người Việt Nam không?',
+      'Tôi có phải là người Châu Á không?',
+      'Tôi có phải là người phương Tây/Âu Mỹ không?'
+    ]
+  },
+  PROFESSION_ROLE: {
+    name: '💼 Nghề nghiệp & Vai trò',
+    list: [
+      'Tôi có phải là ca sĩ không?',
+      'Tôi có phải là diễn viên không?',
+      'Tôi có phải là streamer hoặc YouTuber/Tiktoker không?',
+      'Tôi có siêu năng lực/phép thuật không?',
+      'Tôi có thuộc giới giải trí/Showbiz không?'
+    ]
+  },
+  CHARACTER_TRAIT: {
+    name: '✨ Đặc điểm nhận diện',
+    list: [
+      'Tôi là nhân vật chính diện (người tốt) phải không?',
+      'Tôi có phải là động vật/thú cưng không?',
+      'Tôi có câu nói/câu cửa miệng nổi tiếng nào không?',
+      'Tôi có mang theo vũ khí hoặc trang bị đặc biệt không?'
+    ]
+  }
+};
+
 window.PRESET_THEMES = PRESET_THEMES;
+window.QUESTION_SUGGESTIONS = QUESTION_SUGGESTIONS;
