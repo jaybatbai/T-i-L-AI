@@ -1,5 +1,5 @@
 // ==========================================
-// CẤU HÌNH MẠNG P2P TOÀN CẦU (GOOGLE & TWILIO STUN)
+// CẤU HÌNH MẠNG P2P TOÀN CẦU (GOOGLE & CLOUDFLARE STUN)
 // ==========================================
 const PEER_CONFIG = {
   debug: 0,
@@ -10,7 +10,7 @@ const PEER_CONFIG = {
       { urls: 'stun:stun2.l.google.com:19302' },
       { urls: 'stun:stun3.l.google.com:19302' },
       { urls: 'stun:stun4.l.google.com:19302' },
-      { urls: 'stun:global.stun.twilio.com:3478' }
+      { urls: 'stun:stun.cloudflare.com:3478' }
     ],
     iceCandidatePoolSize: 10
   }
@@ -844,7 +844,7 @@ function initHost(roomCode, playerName) {
   myPeer.on('error', (err) => {
     setAuthButtonsLoading(false);
     if (err.type === 'unavailable-id') {
-      showToast('Mã phòng này đang được mở ở tab khác hoặc vừa kết thúc, hãy bấm "Tạo phòng mới" lại!');
+      showToast('Mã phòng này đang kẹt tín hiệu, hãy bấm "Tạo phòng mới" lại để lấy mã khác nhé!');
       clearSession();
     } else {
       showToast('Lỗi máy chủ P2P: ' + err.type);
@@ -1181,7 +1181,7 @@ function initClient(roomCode, playerName, isReconnect = false) {
 
   const cleanRoomCode = roomCode.trim().toUpperCase();
   let retryCount = 0;
-  const maxRetries = 3;
+  const maxRetries = 5;
 
   setAuthButtonsLoading(true, 'JOIN', 'Đang kết nối...');
 
@@ -1189,7 +1189,7 @@ function initClient(roomCode, playerName, isReconnect = false) {
     setAuthButtonsLoading(false);
     showToast(`Không tìm thấy phòng [${cleanRoomCode}] hoặc Chủ phòng chưa sẵn sàng!`);
     clearSession();
-  }, 12000);
+  }, 14000);
 
   myPeer = new Peer(PEER_CONFIG);
 
@@ -1271,7 +1271,7 @@ function initClient(roomCode, playerName, isReconnect = false) {
   function handleRetryOrError(err) {
     if (retryCount < maxRetries) {
       retryCount++;
-      setAuthButtonsLoading(true, 'JOIN', `Đang thử lại (${retryCount}/${maxRetries})...`);
+      setAuthButtonsLoading(true, 'JOIN', `Đang tìm phòng (${retryCount}/${maxRetries})...`);
       setTimeout(() => {
         if (!isHost && myPeer && !myPeer.destroyed) {
           attemptConnectToHost();
@@ -1929,7 +1929,7 @@ function renderGameState(data) {
               label = 'KHÔNG RÕ';
             }
             return `<span class="px-2 py-0.5 rounded-lg border ${badgeClass} text-[11px] font-semibold"><b class="text-amber-300">${voter?.name || '...'}:</b> ${label}</span>`;
-          }).join('');
+        }).join('');
         } else {
           voteResults.innerHTML = '<span class="text-slate-500 italic text-[11px]">Đang chờ mọi người nhấn biểu quyết...</span>';
         }
