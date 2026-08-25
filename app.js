@@ -134,6 +134,7 @@ let hostAuthoritativeTimer = null;
 let lastTickedSecond = null;
 let lastRenderedQuestionKey = '';
 let previousActivePlayerId = null;
+let lastReactionTimestamp = 0;
 
 // ==========================================
 // QUẢN LÝ PHIÊN (SESSION PERSISTENCE)
@@ -242,7 +243,6 @@ window.togglePresetTheme = function(presetKey) {
   rebuildCharacterPool();
   renderModalPresetButtons();
 
-  // Đồng bộ trạng thái chủ đề tới các máy khác mà không spam khung nhật ký
   if (isHost && serverState) {
     serverState.currentThemeName = currentThemeName;
     broadcastHostState();
@@ -261,7 +261,7 @@ window.removeCharacter = function(index) {
 };
 
 // ==========================================
-// TIỆN ÍCH CHUNG & THOÁT PHÒNG
+// TIỆN ÍCH CHUNG, MÃ QR & THOÁT PHÒNG
 // ==========================================
 function showToast(msg) {
   const toast = document.getElementById('toast');
@@ -308,6 +308,60 @@ window.leaveRoom = function() {
   }
 };
 
+// Hiển thị Popup QR Code
+function showRoomQRCode() {
+  if (!currentRoomCode) return;
+  sound.pop();
+
+  const qrImage = document.getElementById('qr-image');
+  const qrRoomText = document.getElementById('qr-room-text');
+  const modalQrCode = document.getElementById('modal-qr-code');
+
+  const joinUrl = `${window.location.origin}${window.location.pathname}?room=${currentRoomCode}`;
+  const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(joinUrl)}&bgcolor=0f172a&color=f59e0b&margin=6`;
+
+  if (qrImage) qrImage.src = qrApiUrl;
+  if (qrRoomText) qrRoomText.textContent = currentRoomCode;
+  if (modalQrCode) modalQrCode.classList.remove('hidden');
+}
+
+// ==========================================
+// HỆ THỐNG BIỂU CẢM ĐỘNG (IN-GAME LIVE REACTIONS)
+// ==========================================
+window.triggerReaction = function(emoji) {
+  const now = Date.now();
+  if (now - lastReactionTimestamp < 300) return; // Chống spam lag
+  lastReactionTimestamp = now;
+
+  sound.pop();
+  spawnFloatingEmoji(emoji, 'Bạn');
+  sendAction('SEND_REACTION', { emoji, senderName: myName });
+};
+
+function spawnFloatingEmoji(emoji, senderName = '') {
+  const canvas = document.getElementById('reaction-canvas');
+  if (!canvas) return;
+
+  const el = document.createElement('div');
+  el.className = 'floating-emoji absolute flex flex-col items-center pointer-events-none select-none z-50';
+
+  // Random tọa độ xuất phát ở đáy màn hình
+  const randomLeft = 15 + Math.random() * 70; // 15% - 85%
+  el.style.left = `${randomLeft}vw`;
+  el.style.bottom = '80px';
+
+  el.innerHTML = `
+    <span class="text-3xl sm:text-4xl filter drop-shadow-lg">${emoji}</span>
+    ${senderName && senderName !== 'Bạn' ? `<span class="text-[9px] font-bold text-slate-400 bg-slate-900/80 px-1.5 py-0.2 rounded-full border border-slate-700/60 mt-0.5">${senderName}</span>` : ''}
+  `;
+
+  canvas.appendChild(el);
+
+  setTimeout(() => {
+    el.remove();
+  }, 1700);
+}
+
 // ==========================================
 // SỔ GHI CHÚ RIÊNG TƯ & GỢI Ý CÂU HỎI
 // ==========================================
@@ -345,7 +399,6 @@ window.insertQuickNote = function(tag) {
   textareaNotepad.scrollTop = textareaNotepad.scrollHeight;
 };
 
-// Render Trợ Lý Gợi Ý Câu Hỏi (Đã sửa lỗi hiển thị tràn chữ)
 function renderQuestionAssistant() {
   const container = document.getElementById('assistant-categories');
   if (!container || !window.QUESTION_SUGGESTIONS) return;
@@ -515,6 +568,19 @@ function initHost(roomCode, playerName) {
 function handleClientAction(senderPeerId, data) {
   if (!serverState) return;
   const { type, payload } = data;
+
+  if (type === 'SEND_REACTION') {
+    // Phát tán reaction cho toàn bộ phòng
+    connectionsMap.forEach((conn) => {
+      if (conn && conn.open && conn.peer !== senderPeerId) {
+        conn.send({ type: 'BROADCAST_REACTION', payload });
+      }
+    });
+    if (serverState.hostId !== senderPeerId) {
+      spawnFloatingEmoji(payload.emoji, payload.senderName);
+    }
+    return;
+  }
 
   if (type === 'RECONNECT_REQUEST') {
     const existingPlayer = serverState.players.find(p => p.name === payload.name);
@@ -842,6 +908,8 @@ function initClient(roomCode, playerName, isReconnect = false) {
     hostConnection.on('data', (data) => {
       if (data.type === 'STATE_UPDATE') {
         renderGameState(data.payload);
+      } else if (data.type === 'BROADCAST_REACTION') {
+        spawnFloatingEmoji(data.payload.emoji, data.payload.senderName);
       } else if (data.type === 'KICKED') {
         clearSession();
         alert(data.message || 'Bạn đã bị Chủ phòng mời ra khỏi phòng!');
@@ -943,6 +1011,7 @@ function enterLobbyUI(roomCode, amIHost) {
   const screenAuth = document.getElementById('screen-auth');
   const screenLobby = document.getElementById('screen-lobby');
   const btnToggleNotepad = document.getElementById('btn-toggle-notepad');
+  const panelReactions = document.getElementById('panel-reactions');
   const lobbyRoomCode = document.getElementById('lobby-room-code');
   const hostSettings = document.getElementById('host-settings');
   const btnStartGame = document.getElementById('btn-start-game');
@@ -952,6 +1021,7 @@ function enterLobbyUI(roomCode, amIHost) {
   if (screenAuth) screenAuth.classList.add('hidden');
   if (screenLobby) screenLobby.classList.remove('hidden');
   if (btnToggleNotepad) btnToggleNotepad.classList.add('hidden');
+  if (panelReactions) panelReactions.classList.add('hidden');
   if (lobbyRoomCode) lobbyRoomCode.textContent = roomCode;
 
   if (amIHost) {
@@ -1097,6 +1167,7 @@ function renderGameState(data) {
   const screenLobby = document.getElementById('screen-lobby');
   const screenGame = document.getElementById('screen-game');
   const btnToggleNotepad = document.getElementById('btn-toggle-notepad');
+  const panelReactions = document.getElementById('panel-reactions');
   const modalLeaderboard = document.getElementById('modal-leaderboard');
   const lobbyPlayerCount = document.getElementById('lobby-player-count');
   const lobbyPlayerList = document.getElementById('lobby-player-list');
@@ -1147,6 +1218,7 @@ function renderGameState(data) {
     if (screenLobby) screenLobby.classList.remove('hidden');
     if (screenGame) screenGame.classList.add('hidden');
     if (btnToggleNotepad) btnToggleNotepad.classList.add('hidden');
+    if (panelReactions) panelReactions.classList.add('hidden');
     if (modalLeaderboard) modalLeaderboard.classList.add('hidden');
     previousActivePlayerId = null;
     handleClientTimer(data);
@@ -1172,6 +1244,8 @@ function renderGameState(data) {
   } else if (data.state === 'PLAYING' || data.state === 'ENDED') {
     if (screenLobby) screenLobby.classList.add('hidden');
     if (screenGame) screenGame.classList.remove('hidden');
+    if (panelReactions) panelReactions.classList.remove('hidden');
+
     if (btnToggleNotepad) {
       if (amISpectator) btnToggleNotepad.classList.add('hidden');
       else btnToggleNotepad.classList.remove('hidden');
@@ -1467,6 +1541,19 @@ document.addEventListener('DOMContentLoaded', () => {
   initNotepad();
   renderQuestionAssistant();
 
+  // Tự động bắt tham số ?room= trên URL (quét mã QR)
+  const urlParams = new URLSearchParams(window.location.search);
+  const roomParam = urlParams.get('room');
+  const inputRoomCode = document.getElementById('input-room-code');
+  const inputName = document.getElementById('input-name');
+
+  if (roomParam && inputRoomCode) {
+    inputRoomCode.value = roomParam.toUpperCase();
+    if (inputName) inputName.focus();
+    showToast(`Đã nhận diện mã phòng [${roomParam.toUpperCase()}] từ liên kết!`);
+  }
+
+  // Khôi phục phiên tự động nếu F5 trang
   const existingSession = getSession();
   if (existingSession && existingSession.roomCode && existingSession.playerName) {
     showToast(`Đang kết nối lại phòng [${existingSession.roomCode}]...`);
@@ -1491,8 +1578,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalQuestionAssistant = document.getElementById('modal-question-assistant');
   const btnCloseAssistantModal = document.getElementById('btn-close-assistant-modal');
 
-  const inputName = document.getElementById('input-name');
-  const inputRoomCode = document.getElementById('input-room-code');
+  const btnOpenQrLobby = document.getElementById('btn-open-qr-lobby');
+  const modalQrCode = document.getElementById('modal-qr-code');
+  const btnCloseQrModal = document.getElementById('btn-close-qr-modal');
+
   const btnCreate = document.getElementById('btn-create');
   const btnJoin = document.getElementById('btn-join');
 
@@ -1529,6 +1618,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const panelVoteConfirm = document.getElementById('panel-vote-confirm');
   const btnCancelVote = document.getElementById('btn-cancel-vote');
   const btnConfirmVote = document.getElementById('btn-confirm-vote');
+
+  if (btnOpenQrLobby) btnOpenQrLobby.addEventListener('click', showRoomQRCode);
+  if (btnCloseQrModal && modalQrCode) {
+    btnCloseQrModal.addEventListener('click', () => {
+      sound.pop();
+      modalQrCode.classList.add('hidden');
+    });
+  }
 
   if (btnToggleSound) {
     btnToggleSound.addEventListener('click', () => {
