@@ -165,9 +165,9 @@
         <div id="badge-lobby-timer" class="px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold rounded-full">
           ⏱️ 45s / lượt
         </div>
-        <div id="badge-role" class="px-3.5 py-1.5 bg-slate-800 border border-slate-700 text-slate-300 text-xs font-bold rounded-full">
-          Thành viên
-        </div>
+        <button onclick="leaveRoom()" class="px-3 py-1.5 bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 text-rose-400 text-xs font-bold rounded-full transition active:scale-95">
+          🚪 Rời phòng
+        </button>
       </div>
     </div>
 
@@ -248,6 +248,9 @@
         </div>
         <button id="btn-restart-game" class="hidden text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3.5 py-1.5 rounded-xl transition shadow-md">
           Chơi ván mới
+        </button>
+        <button onclick="leaveRoom()" class="p-2 rounded-xl bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border border-slate-700 text-xs font-bold transition active:scale-95" title="Rời phòng">
+          🚪
         </button>
       </div>
     </div>
@@ -399,7 +402,7 @@
         <button id="btn-close-assistant-modal" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition">✕</button>
       </div>
 
-      <!-- Tabs / Categories Container -->
+      <!-- Categories Container -->
       <div id="assistant-categories" class="flex-grow overflow-y-auto space-y-4 pr-1 custom-scrollbar"></div>
     </div>
   </div>
