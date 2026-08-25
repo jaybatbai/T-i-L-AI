@@ -1,5 +1,5 @@
 // ==========================================
-// CẤU HÌNH MẠNG P2P & GOOGLE STUN SERVERS
+// CẤU HÌNH MẠNG P2P TOÀN CẦU (STUN + TURN RELAY)
 // ==========================================
 const PEER_CONFIG = {
   config: {
@@ -7,8 +7,22 @@ const PEER_CONFIG = {
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
       { urls: 'stun:stun2.l.google.com:19302' },
-      { urls: 'stun:stun3.l.google.com:19302' },
-      { urls: 'stun:stun4.l.google.com:19302' }
+      { urls: 'stun:stun.relay.metered.ca:80' },
+      {
+        urls: 'turn:standard.relay.metered.ca:80',
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      },
+      {
+        urls: 'turn:standard.relay.metered.ca:443',
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      },
+      {
+        urls: 'turn:standard.relay.metered.ca:443?transport=tcp',
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      }
     ],
     iceCandidatePoolSize: 10
   }
@@ -190,6 +204,7 @@ const connectionsMap = new Map();
 let serverState = null;
 let hostConnection = null;
 let connectionTimeoutTimer = null;
+let heartbeatInterval = null;
 
 let localTimerInterval = null;
 let hostAuthoritativeTimer = null;
@@ -419,10 +434,10 @@ function showToast(msg) {
   setTimeout(() => {
     toast.classList.remove('opacity-100', 'translate-y-0');
     toast.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
-  }, 2800);
+  }, 3200);
 }
 
-function setAuthButtonsLoading(loading, buttonType = 'JOIN') {
+function setAuthButtonsLoading(loading, buttonType = 'JOIN', loadingText = '') {
   const btnJoin = document.getElementById('btn-join');
   const btnCreate = document.getElementById('btn-create');
   const inputName = document.getElementById('input-name');
@@ -431,11 +446,11 @@ function setAuthButtonsLoading(loading, buttonType = 'JOIN') {
   if (loading) {
     if (buttonType === 'JOIN' && btnJoin) {
       btnJoin.disabled = true;
-      btnJoin.innerHTML = `<span class="inline-block animate-spin mr-1">🔄</span> Đang vào...`;
+      btnJoin.innerHTML = `<span class="inline-block animate-spin mr-1">🔄</span> ${loadingText || 'Đang kết nối...'}`;
     }
     if (buttonType === 'CREATE' && btnCreate) {
       btnCreate.disabled = true;
-      btnCreate.innerHTML = `<span class="inline-block animate-spin mr-1">🔄</span> Đang tạo...`;
+      btnCreate.innerHTML = `<span class="inline-block animate-spin mr-1">🔄</span> ${loadingText || 'Đang tạo phòng...'}`;
     }
     if (inputName) inputName.disabled = true;
     if (inputRoomCode) inputRoomCode.disabled = true;
@@ -478,6 +493,10 @@ function shuffle(array) {
 
 window.leaveRoom = function() {
   if (confirm('Bạn muốn rời khỏi phòng này?')) {
+    if (heartbeatInterval) clearInterval(heartbeatInterval);
+    if (myPeer) {
+      try { myPeer.destroy(); } catch (e) {}
+    }
     clearSession();
     location.reload();
   }
@@ -756,20 +775,24 @@ function initHost(roomCode, playerName) {
   if (myPeer) {
     try { myPeer.destroy(); } catch (e) {}
   }
+  if (heartbeatInterval) clearInterval(heartbeatInterval);
 
-  const peerId = `whoami-${roomCode.toLowerCase()}`;
+  const cleanRoomCode = roomCode.trim().toUpperCase();
+  const peerId = `whoami-v4-${cleanRoomCode.toLowerCase()}`;
+  
+  showToast(`Đang khởi tạo máy chủ phòng [${cleanRoomCode}]...`);
   myPeer = new Peer(peerId, PEER_CONFIG);
 
   myPeer.on('open', (id) => {
     myId = id;
     isHost = true;
-    currentRoomCode = roomCode;
+    currentRoomCode = cleanRoomCode;
 
     setAuthButtonsLoading(false);
-    saveSession({ roomCode, playerName, isHost: true });
+    saveSession({ roomCode: cleanRoomCode, playerName, isHost: true });
 
     serverState = {
-      code: roomCode,
+      code: cleanRoomCode,
       hostId: id,
       state: 'LOBBY',
       turnIndex: 0,
@@ -796,9 +819,9 @@ function initHost(roomCode, playerName) {
       logs: []
     };
 
-    addHostLog(`🏠 <b>Phòng [${roomCode}]</b> đã tạo bởi <span class="text-amber-400">${playerName}</span>`, { authorId: id });
+    addHostLog(`🏠 <b>Phòng [${cleanRoomCode}]</b> đã tạo bởi <span class="text-amber-400">${playerName}</span>`, { authorId: id });
 
-    enterLobbyUI(roomCode, true);
+    enterLobbyUI(cleanRoomCode, true);
     broadcastHostState();
   });
 
@@ -808,6 +831,10 @@ function initHost(roomCode, playerName) {
     });
 
     conn.on('data', (data) => {
+      if (data && data.type === 'PING') {
+        conn.send({ type: 'PONG' });
+        return;
+      }
       handleClientAction(conn.peer, data);
     });
 
@@ -817,14 +844,14 @@ function initHost(roomCode, playerName) {
     });
 
     conn.on('error', (err) => {
-      console.warn('Host connection error:', err);
+      console.warn('Host Connection Error:', err);
     });
   });
 
   myPeer.on('error', (err) => {
     setAuthButtonsLoading(false);
     if (err.type === 'unavailable-id') {
-      showToast('Mã phòng vừa được sử dụng, vui lòng thử lại mã khác!');
+      showToast('Mã phòng này vừa được sử dụng hoặc đang kẹt kết nối, hãy bấm "Tạo phòng mới" lại!');
       clearSession();
     } else {
       showToast('Lỗi máy chủ P2P: ' + err.type);
@@ -1078,7 +1105,7 @@ function handlePlayerDisconnect(peerId) {
 
   const leaving = serverState.players.find(p => p.id === peerId);
   if (leaving) {
-    addHostLog(`🔌 <b class="text-slate-400">${leaving.name}</b> mất kết nối tạm thời.`);
+    addHostLog(`🔌 <b class="text-slate-400">${leaving.name}</b> mất kết nối.`);
   }
 
   if (serverState.state === 'PLAYING') {
@@ -1153,23 +1180,30 @@ function initClient(roomCode, playerName, isReconnect = false) {
   if (myPeer) {
     try { myPeer.destroy(); } catch (e) {}
   }
-
   if (connectionTimeoutTimer) clearTimeout(connectionTimeoutTimer);
+  if (heartbeatInterval) clearInterval(heartbeatInterval);
+
+  const cleanRoomCode = roomCode.trim().toUpperCase();
+
+  setAuthButtonsLoading(true, 'JOIN', 'Đang tìm phòng...');
+  showToast(`Đang định tuyến tới phòng [${cleanRoomCode}]...`);
 
   connectionTimeoutTimer = setTimeout(() => {
     setAuthButtonsLoading(false);
-    showToast('Hết thời gian chờ: Không tìm thấy phòng hoặc mạng P2P bị chặn!');
+    showToast('Hết thời gian chờ: Không tìm thấy phòng hoặc chủ phòng chưa sẵn sàng!');
     clearSession();
-  }, 8500);
+  }, 12000);
 
   myPeer = new Peer(PEER_CONFIG);
 
   myPeer.on('open', (id) => {
     myId = id;
     isHost = false;
-    currentRoomCode = roomCode;
+    currentRoomCode = cleanRoomCode;
 
-    const hostPeerId = `whoami-${roomCode.toLowerCase()}`;
+    setAuthButtonsLoading(true, 'JOIN', 'Đang vượt NAT...');
+    const hostPeerId = `whoami-v4-${cleanRoomCode.toLowerCase()}`;
+    
     hostConnection = myPeer.connect(hostPeerId, {
       reliable: true
     });
@@ -1178,7 +1212,15 @@ function initClient(roomCode, playerName, isReconnect = false) {
       if (connectionTimeoutTimer) clearTimeout(connectionTimeoutTimer);
       setAuthButtonsLoading(false);
 
-      saveSession({ roomCode, playerName, isHost: false });
+      saveSession({ roomCode: cleanRoomCode, playerName, isHost: false });
+      showToast('Đã kết nối thành công!');
+
+      // Duy trì nhịp tim kết nối (Heartbeat Ping)
+      heartbeatInterval = setInterval(() => {
+        if (hostConnection && hostConnection.open) {
+          hostConnection.send({ type: 'PING' });
+        }
+      }, 3000);
 
       if (isReconnect) {
         hostConnection.send({
@@ -1191,10 +1233,11 @@ function initClient(roomCode, playerName, isReconnect = false) {
           payload: { name: playerName }
         });
       }
-      enterLobbyUI(roomCode, false);
+      enterLobbyUI(cleanRoomCode, false);
     });
 
     hostConnection.on('data', (data) => {
+      if (data && data.type === 'PONG') return;
       if (data.type === 'STATE_UPDATE') {
         renderGameState(data.payload);
       } else if (data.type === 'BROADCAST_REACTION') {
@@ -1209,6 +1252,7 @@ function initClient(roomCode, playerName, isReconnect = false) {
     });
 
     hostConnection.on('close', () => {
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
       showToast('Mất kết nối tới Chủ phòng!');
       clearSession();
       setTimeout(() => location.reload(), 2500);
@@ -1217,7 +1261,7 @@ function initClient(roomCode, playerName, isReconnect = false) {
     hostConnection.on('error', (err) => {
       if (connectionTimeoutTimer) clearTimeout(connectionTimeoutTimer);
       setAuthButtonsLoading(false);
-      showToast('Lỗi kết nối phòng: ' + err);
+      showToast('Lỗi đường truyền P2P: ' + err);
     });
   });
 
@@ -1225,10 +1269,10 @@ function initClient(roomCode, playerName, isReconnect = false) {
     if (connectionTimeoutTimer) clearTimeout(connectionTimeoutTimer);
     setAuthButtonsLoading(false);
     if (err.type === 'peer-unavailable') {
-      showToast('Mã phòng không tồn tại hoặc Chủ phòng đã thoát!');
+      showToast(`Không tìm thấy phòng [${cleanRoomCode}], vui lòng kiểm tra lại mã!`);
       clearSession();
     } else {
-      showToast('Lỗi kết nối mạng P2P: ' + err.type);
+      showToast('Lỗi kết nối P2P: ' + err.type);
     }
   });
 }
@@ -1903,9 +1947,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const inputName = document.getElementById('input-name');
 
   if (roomParam && inputRoomCode) {
-    inputRoomCode.value = roomParam.toUpperCase().trim();
+    const cleanParam = roomParam.trim().toUpperCase();
+    inputRoomCode.value = cleanParam;
     if (inputName) inputName.focus();
-    showToast(`Đã nhận diện phòng [${roomParam.toUpperCase().trim()}]`);
+    showToast(`Đã nhận diện phòng [${cleanParam}]`);
   }
 
   const existingSession = getSession();
@@ -2303,7 +2348,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!name) return showToast('Vui lòng nhập tên của bạn!');
       myName = name;
       const code = generateRoomCode();
-      setAuthButtonsLoading(true, 'CREATE');
+      setAuthButtonsLoading(true, 'CREATE', 'Đang tạo phòng...');
       initHost(code, name);
     });
   }
@@ -2317,7 +2362,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!name) return showToast('Vui lòng nhập tên của bạn!');
       if (!code) return showToast('Vui lòng nhập mã phòng!');
       myName = name;
-      setAuthButtonsLoading(true, 'JOIN');
       initClient(code, name);
     });
   }
