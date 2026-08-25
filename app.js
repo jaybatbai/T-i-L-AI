@@ -1,4 +1,20 @@
 // ==========================================
+// CẤU HÌNH MẠNG P2P & GOOGLE STUN SERVERS
+// ==========================================
+const PEER_CONFIG = {
+  config: {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' },
+      { urls: 'stun:stun3.l.google.com:19302' },
+      { urls: 'stun:stun4.l.google.com:19302' }
+    ],
+    iceCandidatePoolSize: 10
+  }
+};
+
+// ==========================================
 // HỆ THỐNG ÂM THANH & RUNG PHẢN HỒI (SOUND & HAPTIC)
 // ==========================================
 class FeedbackEngine {
@@ -128,11 +144,13 @@ class FeedbackEngine {
 const sound = new FeedbackEngine();
 
 function getThemeKeyByCharacter(characterName) {
-  if (!characterName || !window.PRESET_THEMES) return 'SHOWBIZ';
-  for (const key of Object.keys(window.PRESET_THEMES)) {
-    const list = window.PRESET_THEMES[key].list;
-    if (list && list.some(name => name.toLowerCase() === characterName.toLowerCase())) {
-      return key;
+  if (!characterName) return 'SHOWBIZ';
+  if (window.PRESET_THEMES) {
+    for (const key of Object.keys(window.PRESET_THEMES)) {
+      const list = window.PRESET_THEMES[key].list;
+      if (list && list.some(name => name.toLowerCase() === characterName.toLowerCase())) {
+        return key;
+      }
     }
   }
   return 'SHOWBIZ';
@@ -143,11 +161,13 @@ function getThemeKeyByCharacter(characterName) {
 // ==========================================
 const STORAGE_KEY_PRESETS = 'whoami_selected_preset_keys_v4';
 const STORAGE_KEY_CUSTOM = 'whoami_custom_character_list_v4';
+const STORAGE_KEY_SHEET_THEMES = 'whoami_sheet_themes_v4';
 const STORAGE_KEY_NOTEPAD = 'whoami_private_notepad_content';
 const SESSION_STORAGE_KEY = 'whoami_active_p2p_session';
 
 let selectedPresetKeys = ['SHOWBIZ'];
 let customCharacters = [];
+let sheetThemes = {};
 let currentCharacterPool = [];
 let currentThemeName = 'Showbiz';
 let searchQuery = '';
@@ -169,6 +189,7 @@ let selectedVoteOption = null;
 const connectionsMap = new Map();
 let serverState = null;
 let hostConnection = null;
+let connectionTimeoutTimer = null;
 
 let localTimerInterval = null;
 let hostAuthoritativeTimer = null;
@@ -200,11 +221,21 @@ function clearSession() {
 }
 
 // ==========================================
-// QUẢN LÝ KHO NHÂN VẬT & PRESET
+// QUẢN LÝ KHO NHÂN VẬT & PRESET / GOOGLE SHEET THEMES
 // ==========================================
 function loadCharacterPool() {
   const savedPresets = localStorage.getItem(STORAGE_KEY_PRESETS);
   const savedCustom = localStorage.getItem(STORAGE_KEY_CUSTOM);
+  const savedSheetThemes = localStorage.getItem(STORAGE_KEY_SHEET_THEMES);
+
+  if (savedSheetThemes) {
+    try {
+      const parsed = JSON.parse(savedSheetThemes);
+      if (typeof parsed === 'object' && parsed !== null) sheetThemes = parsed;
+    } catch (e) {
+      sheetThemes = {};
+    }
+  }
 
   if (savedPresets) {
     try {
@@ -233,6 +264,8 @@ function rebuildCharacterPool() {
   selectedPresetKeys.forEach(key => {
     if (window.PRESET_THEMES && window.PRESET_THEMES[key]) {
       combined.push(...window.PRESET_THEMES[key].list);
+    } else if (sheetThemes && sheetThemes[key]) {
+      combined.push(...sheetThemes[key].list);
     }
   });
 
@@ -246,7 +279,12 @@ function rebuildCharacterPool() {
     return true;
   });
 
-  const names = selectedPresetKeys.map(k => window.PRESET_THEMES[k]?.shortName).filter(Boolean);
+  const names = selectedPresetKeys.map(k => {
+    if (window.PRESET_THEMES && window.PRESET_THEMES[k]) return window.PRESET_THEMES[k].shortName;
+    if (sheetThemes && sheetThemes[k]) return sheetThemes[k].shortName;
+    return null;
+  }).filter(Boolean);
+
   if (customCharacters.length > 0) names.push('Tự chọn');
 
   if (names.length === 0) {
@@ -263,11 +301,13 @@ function rebuildCharacterPool() {
 function saveCharacterPool() {
   localStorage.setItem(STORAGE_KEY_PRESETS, JSON.stringify(selectedPresetKeys));
   localStorage.setItem(STORAGE_KEY_CUSTOM, JSON.stringify(customCharacters));
+  localStorage.setItem(STORAGE_KEY_SHEET_THEMES, JSON.stringify(sheetThemes));
   updateCharacterVaultUI();
 }
 
 window.togglePresetTheme = function(presetKey) {
-  if (!window.PRESET_THEMES[presetKey]) return;
+  const themeObj = (window.PRESET_THEMES && window.PRESET_THEMES[presetKey]) || sheetThemes[presetKey];
+  if (!themeObj) return;
 
   const idx = selectedPresetKeys.indexOf(presetKey);
   if (idx > -1) {
@@ -275,10 +315,10 @@ window.togglePresetTheme = function(presetKey) {
       return showToast('Cần giữ ít nhất 1 chủ đề!');
     }
     selectedPresetKeys.splice(idx, 1);
-    showToast(`Bỏ gói [${window.PRESET_THEMES[presetKey].shortName}]`);
+    showToast(`Bỏ gói [${themeObj.shortName}]`);
   } else {
     selectedPresetKeys.push(presetKey);
-    showToast(`Thêm gói [${window.PRESET_THEMES[presetKey].shortName}]`);
+    showToast(`Thêm gói [${themeObj.shortName}]`);
   }
 
   sound.pop();
@@ -288,6 +328,24 @@ window.togglePresetTheme = function(presetKey) {
   if (isHost && serverState) {
     serverState.currentThemeName = currentThemeName;
     broadcastHostState();
+  }
+};
+
+window.deleteSheetTheme = function(themeId, event) {
+  if (event) event.stopPropagation();
+  const themeObj = sheetThemes[themeId];
+  if (!themeObj) return;
+
+  if (confirm(`Xóa toàn bộ gói chủ đề Sheet [${themeObj.shortName}]?`)) {
+    sound.pop();
+    delete sheetThemes[themeId];
+    selectedPresetKeys = selectedPresetKeys.filter(k => k !== themeId);
+    if (selectedPresetKeys.length === 0 && customCharacters.length === 0) {
+      selectedPresetKeys = ['SHOWBIZ'];
+    }
+    rebuildCharacterPool();
+    renderModalPresetButtons();
+    showToast(`Đã xóa gói [${themeObj.shortName}]`);
   }
 };
 
@@ -303,7 +361,51 @@ window.removeCharacter = function(index) {
 };
 
 // ==========================================
-// TIỆN ÍCH CHUNG, MÃ QR & THOÁT PHÒNG
+// PARSER CSV ĐA CỘT THÔNG MINH CHO GOOGLE SHEET
+// ==========================================
+function parseCSV(text) {
+  const lines = [];
+  let row = [];
+  let inQuotes = false;
+  let currentField = '';
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const nextChar = text[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        currentField += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      row.push(currentField.trim());
+      currentField = '';
+    } else if ((char === '\r' || char === '\n') && !inQuotes) {
+      if (char === '\r' && nextChar === '\n') i++;
+      row.push(currentField.trim());
+      if (row.some(field => field.length > 0)) {
+        lines.push(row);
+      }
+      row = [];
+      currentField = '';
+    } else {
+      currentField += char;
+    }
+  }
+  if (currentField.length > 0 || row.length > 0) {
+    row.push(currentField.trim());
+    if (row.some(field => field.length > 0)) {
+      lines.push(row);
+    }
+  }
+  return lines;
+}
+
+// ==========================================
+// TIỆN ÍCH CHUNG, MÃ QR & TRẠNG THÁI LOADING
 // ==========================================
 function showToast(msg) {
   const toast = document.getElementById('toast');
@@ -317,7 +419,38 @@ function showToast(msg) {
   setTimeout(() => {
     toast.classList.remove('opacity-100', 'translate-y-0');
     toast.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
-  }, 2500);
+  }, 2800);
+}
+
+function setAuthButtonsLoading(loading, buttonType = 'JOIN') {
+  const btnJoin = document.getElementById('btn-join');
+  const btnCreate = document.getElementById('btn-create');
+  const inputName = document.getElementById('input-name');
+  const inputRoomCode = document.getElementById('input-room-code');
+
+  if (loading) {
+    if (buttonType === 'JOIN' && btnJoin) {
+      btnJoin.disabled = true;
+      btnJoin.innerHTML = `<span class="inline-block animate-spin mr-1">🔄</span> Đang vào...`;
+    }
+    if (buttonType === 'CREATE' && btnCreate) {
+      btnCreate.disabled = true;
+      btnCreate.innerHTML = `<span class="inline-block animate-spin mr-1">🔄</span> Đang tạo...`;
+    }
+    if (inputName) inputName.disabled = true;
+    if (inputRoomCode) inputRoomCode.disabled = true;
+  } else {
+    if (btnJoin) {
+      btnJoin.disabled = false;
+      btnJoin.innerHTML = 'Vào phòng';
+    }
+    if (btnCreate) {
+      btnCreate.disabled = false;
+      btnCreate.innerHTML = 'Tạo phòng mới';
+    }
+    if (inputName) inputName.disabled = false;
+    if (inputRoomCode) inputRoomCode.disabled = false;
+  }
 }
 
 function copyRoomCode() {
@@ -620,14 +753,19 @@ function renderLogsUI(logsData = null) {
 // LOGIC CHỦ PHÒNG (HOST ENGINE)
 // ==========================================
 function initHost(roomCode, playerName) {
+  if (myPeer) {
+    try { myPeer.destroy(); } catch (e) {}
+  }
+
   const peerId = `whoami-${roomCode.toLowerCase()}`;
-  myPeer = new Peer(peerId);
+  myPeer = new Peer(peerId, PEER_CONFIG);
 
   myPeer.on('open', (id) => {
     myId = id;
     isHost = true;
     currentRoomCode = roomCode;
 
+    setAuthButtonsLoading(false);
     saveSession({ roomCode, playerName, isHost: true });
 
     serverState = {
@@ -677,14 +815,19 @@ function initHost(roomCode, playerName) {
       connectionsMap.delete(conn.peer);
       handlePlayerDisconnect(conn.peer);
     });
+
+    conn.on('error', (err) => {
+      console.warn('Host connection error:', err);
+    });
   });
 
   myPeer.on('error', (err) => {
+    setAuthButtonsLoading(false);
     if (err.type === 'unavailable-id') {
-      showToast('Mã phòng vừa được sử dụng, vui lòng thử lại!');
+      showToast('Mã phòng vừa được sử dụng, vui lòng thử lại mã khác!');
       clearSession();
     } else {
-      showToast('Lỗi kết nối P2P: ' + err.type);
+      showToast('Lỗi máy chủ P2P: ' + err.type);
     }
   });
 }
@@ -1007,19 +1150,36 @@ function broadcastHostState() {
 // LOGIC THÀNH VIÊN (CLIENT ENGINE)
 // ==========================================
 function initClient(roomCode, playerName, isReconnect = false) {
-  myPeer = new Peer();
+  if (myPeer) {
+    try { myPeer.destroy(); } catch (e) {}
+  }
+
+  if (connectionTimeoutTimer) clearTimeout(connectionTimeoutTimer);
+
+  connectionTimeoutTimer = setTimeout(() => {
+    setAuthButtonsLoading(false);
+    showToast('Hết thời gian chờ: Không tìm thấy phòng hoặc mạng P2P bị chặn!');
+    clearSession();
+  }, 8500);
+
+  myPeer = new Peer(PEER_CONFIG);
 
   myPeer.on('open', (id) => {
     myId = id;
     isHost = false;
     currentRoomCode = roomCode;
 
-    saveSession({ roomCode, playerName, isHost: false });
-
     const hostPeerId = `whoami-${roomCode.toLowerCase()}`;
-    hostConnection = myPeer.connect(hostPeerId, { reliable: true });
+    hostConnection = myPeer.connect(hostPeerId, {
+      reliable: true
+    });
 
     hostConnection.on('open', () => {
+      if (connectionTimeoutTimer) clearTimeout(connectionTimeoutTimer);
+      setAuthButtonsLoading(false);
+
+      saveSession({ roomCode, playerName, isHost: false });
+
       if (isReconnect) {
         hostConnection.send({
           type: 'RECONNECT_REQUEST',
@@ -1053,14 +1213,22 @@ function initClient(roomCode, playerName, isReconnect = false) {
       clearSession();
       setTimeout(() => location.reload(), 2500);
     });
+
+    hostConnection.on('error', (err) => {
+      if (connectionTimeoutTimer) clearTimeout(connectionTimeoutTimer);
+      setAuthButtonsLoading(false);
+      showToast('Lỗi kết nối phòng: ' + err);
+    });
   });
 
   myPeer.on('error', (err) => {
+    if (connectionTimeoutTimer) clearTimeout(connectionTimeoutTimer);
+    setAuthButtonsLoading(false);
     if (err.type === 'peer-unavailable') {
-      showToast('Không tìm thấy phòng với mã này!');
+      showToast('Mã phòng không tồn tại hoặc Chủ phòng đã thoát!');
       clearSession();
     } else {
-      showToast('Lỗi kết nối P2P: ' + err.type);
+      showToast('Lỗi kết nối mạng P2P: ' + err.type);
     }
   });
 }
@@ -1201,9 +1369,9 @@ function updateCharacterVaultUI() {
 
 function renderModalPresetButtons() {
   const modalPresetButtons = document.getElementById('modal-preset-buttons');
-  if (!modalPresetButtons || !window.PRESET_THEMES) return;
+  if (!modalPresetButtons) return;
 
-  modalPresetButtons.innerHTML = Object.keys(window.PRESET_THEMES).map(key => {
+  const builtInHtml = window.PRESET_THEMES ? Object.keys(window.PRESET_THEMES).map(key => {
     const preset = window.PRESET_THEMES[key];
     const isSelected = selectedPresetKeys.includes(key);
     return `
@@ -1219,7 +1387,31 @@ function renderModalPresetButtons() {
         <span class="text-[10px] ${isSelected ? 'text-amber-400/80 font-medium' : 'text-slate-500'}">${preset.list.length} tên</span>
       </button>
     `;
+  }).join('') : '';
+
+  const sheetKeys = Object.keys(sheetThemes);
+  const sheetHtml = sheetKeys.map(key => {
+    const theme = sheetThemes[key];
+    const isSelected = selectedPresetKeys.includes(key);
+    return `
+      <button onclick="togglePresetTheme('${key}')" class="p-2.5 rounded-xl border text-xs font-bold transition text-left flex flex-col justify-between relative ${
+        isSelected 
+          ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 ring-1 ring-cyan-400/40 shadow-sm' 
+          : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-cyan-500/50 hover:bg-slate-850 hover:text-slate-200'
+      }">
+        <div class="flex items-center justify-between w-full mb-0.5 gap-1">
+          <span class="truncate font-black text-xs">${theme.name}</span>
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <span class="text-[10px] ${isSelected ? 'text-cyan-300' : 'text-transparent'}">✓</span>
+            <span onclick="deleteSheetTheme('${key}', event)" title="Xóa gói Sheet này" class="text-slate-500 hover:text-rose-400 font-bold px-1 rounded hover:bg-slate-800 transition">✕</span>
+          </div>
+        </div>
+        <span class="text-[10px] ${isSelected ? 'text-cyan-400/90 font-medium' : 'text-slate-500'}">${theme.list.length} tên</span>
+      </button>
+    `;
   }).join('');
+
+  modalPresetButtons.innerHTML = builtInHtml + sheetHtml;
 }
 
 function handleClientTimer(data) {
@@ -1711,9 +1903,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const inputName = document.getElementById('input-name');
 
   if (roomParam && inputRoomCode) {
-    inputRoomCode.value = roomParam.toUpperCase();
+    inputRoomCode.value = roomParam.toUpperCase().trim();
     if (inputName) inputName.focus();
-    showToast(`Đã nhận diện phòng [${roomParam.toUpperCase()}]`);
+    showToast(`Đã nhận diện phòng [${roomParam.toUpperCase().trim()}]`);
   }
 
   const existingSession = getSession();
@@ -1915,7 +2107,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnSelectAllPresets) {
     btnSelectAllPresets.addEventListener('click', () => {
       sound.pop();
-      selectedPresetKeys = Object.keys(window.PRESET_THEMES);
+      const allBuiltIn = window.PRESET_THEMES ? Object.keys(window.PRESET_THEMES) : [];
+      const allSheets = Object.keys(sheetThemes);
+      selectedPresetKeys = [...allBuiltIn, ...allSheets];
       rebuildCharacterPool();
       renderModalPresetButtons();
       showToast(`Đã chọn tất cả ${selectedPresetKeys.length} gói!`);
@@ -1979,34 +2173,63 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!match) return showToast('Link Google Sheet không đúng định dạng!');
 
       const sheetId = match[1];
-      const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
+      const gidMatch = url.match(/[#&?]gid=([0-9]+)/);
+      const gidParam = gidMatch ? `&gid=${gidMatch[1]}` : '';
+      const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv${gidParam}`;
 
-      showToast('Đang tải từ Google Sheet...');
+      showToast('Đang tải các cột chủ đề...');
 
       try {
         const response = await fetch(csvUrl);
         if (!response.ok) throw new Error('Không thể tải');
         const text = await response.text();
 
-        const lines = text.split('\n')
-          .map(l => l.replace(/^"|"$/g, '').replace(/""/g, '"').trim())
-          .filter(l => l && !l.toLowerCase().startsWith('tên') && !l.toLowerCase().startsWith('name') && !l.toLowerCase().startsWith('nhân vật'));
+        const grid = parseCSV(text);
+        if (grid.length === 0) return showToast('Không tìm thấy dữ liệu trong bảng!');
 
-        if (lines.length === 0) return showToast('Không tìm thấy danh sách tên trong bảng!');
+        const headers = grid[0];
+        let newThemesCount = 0;
+        let totalNamesCount = 0;
 
-        let addedCount = 0;
-        lines.forEach(name => {
-          if (name.length > 0 && !currentCharacterPool.some(c => c.toLowerCase() === name.toLowerCase())) {
-            customCharacters.push(name);
-            addedCount++;
+        for (let col = 0; col < headers.length; col++) {
+          let rawHeader = (headers[col] || '').trim();
+          if (!rawHeader) rawHeader = `Chủ đề cột ${col + 1}`;
+
+          const columnNames = [];
+          for (let row = 1; row < grid.length; row++) {
+            const cell = (grid[row][col] || '').trim();
+            if (cell.length > 0 && !columnNames.some(c => c.toLowerCase() === cell.toLowerCase())) {
+              columnNames.push(cell);
+            }
           }
-        });
+
+          if (columnNames.length > 0) {
+            const themeKey = `SHEET_${rawHeader.toUpperCase().replace(/[^A-Z0-9]/g, '_')}_${col}`;
+            sheetThemes[themeKey] = {
+              id: themeKey,
+              name: `🌐 ${rawHeader}`,
+              shortName: rawHeader,
+              list: columnNames
+            };
+
+            if (!selectedPresetKeys.includes(themeKey)) {
+              selectedPresetKeys.push(themeKey);
+            }
+
+            newThemesCount++;
+            totalNamesCount += columnNames.length;
+          }
+        }
+
+        if (newThemesCount === 0) {
+          return showToast('Không tìm thấy nhân vật nào dưới các cột chủ đề!');
+        }
 
         sound.success();
         rebuildCharacterPool();
         renderModalPresetButtons();
         inputSheetUrl.value = '';
-        showToast(`Đồng bộ thành công ${addedCount} tên!`);
+        showToast(`Nhập thành công ${newThemesCount} chủ đề (${totalNamesCount} nhân vật)!`);
       } catch (err) {
         showToast('Lỗi: Hãy đảm bảo Google Sheet đã bật xem công khai!');
       }
@@ -2058,10 +2281,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (btnResetDefaultChars) {
     btnResetDefaultChars.addEventListener('click', () => {
-      if (confirm('Khôi phục lại gói Showbiz gốc?')) {
+      if (confirm('Khôi phục lại gói Showbiz gốc & xóa các gói Sheet?')) {
         sound.pop();
         selectedPresetKeys = ['SHOWBIZ'];
         customCharacters = [];
+        sheetThemes = {};
         searchQuery = '';
         if (inputSearchChar) inputSearchChar.value = '';
         rebuildCharacterPool();
@@ -2079,6 +2303,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!name) return showToast('Vui lòng nhập tên của bạn!');
       myName = name;
       const code = generateRoomCode();
+      setAuthButtonsLoading(true, 'CREATE');
       initHost(code, name);
     });
   }
@@ -2092,6 +2317,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!name) return showToast('Vui lòng nhập tên của bạn!');
       if (!code) return showToast('Vui lòng nhập mã phòng!');
       myName = name;
+      setAuthButtonsLoading(true, 'JOIN');
       initClient(code, name);
     });
   }
