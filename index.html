@@ -41,9 +41,20 @@
     .animate-urgent {
       animation: timer-urgent 0.6s infinite ease-in-out;
     }
+    @keyframes float-reaction {
+      0% { transform: translateY(0) scale(0.6) rotate(0deg); opacity: 1; }
+      40% { transform: translateY(-80px) scale(1.3) rotate(-12deg); opacity: 0.95; }
+      100% { transform: translateY(-200px) scale(1) rotate(12deg); opacity: 0; }
+    }
+    .floating-emoji {
+      animation: float-reaction 1.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-start p-3 sm:p-6 selection:bg-amber-500 selection:text-slate-950 relative">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-start p-3 sm:p-6 selection:bg-amber-500 selection:text-slate-950 relative overflow-x-hidden">
+
+  <!-- Container Chứa Biểu Cảm Bay (Floating Reaction Canvas) -->
+  <div id="reaction-canvas" class="fixed inset-0 pointer-events-none z-50 overflow-hidden"></div>
 
   <!-- Toast Notification -->
   <div id="toast" class="fixed top-5 right-5 z-50 transform transition-all duration-300 translate-y-[-20px] opacity-0 pointer-events-none bg-slate-900/95 border border-amber-500/40 text-amber-300 font-semibold px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 backdrop-blur-md">
@@ -57,7 +68,17 @@
     <span id="sound-text" class="hidden sm:inline">Bật âm</span>
   </button>
 
-  <!-- Nút Mở Sổ Ghi Chú Riêng Tư -->
+  <!-- Thanh Thả Reaction Nổi Trong Trận Đấu (Góc Dưới Bên Trái) -->
+  <div id="panel-reactions" class="fixed bottom-4 left-4 z-40 bg-slate-900/90 border border-slate-800 backdrop-blur-xl px-3 py-2 rounded-2xl shadow-2xl flex items-center gap-1.5 hidden transition-all">
+    <button onclick="triggerReaction('😂')" class="p-1.5 text-lg hover:scale-135 active:scale-90 transition transform" title="Cười nghiêng ngả">😂</button>
+    <button onclick="triggerReaction('🔥')" class="p-1.5 text-lg hover:scale-135 active:scale-90 transition transform" title="Cháy quá">🔥</button>
+    <button onclick="triggerReaction('🤡')" class="p-1.5 text-lg hover:scale-135 active:scale-90 transition transform" title="Hề hước">🤡</button>
+    <button onclick="triggerReaction('👏')" class="p-1.5 text-lg hover:scale-135 active:scale-90 transition transform" title="Vỗ tay">👏</button>
+    <button onclick="triggerReaction('😱')" class="p-1.5 text-lg hover:scale-135 active:scale-90 transition transform" title="Bất ngờ">😱</button>
+    <button onclick="triggerReaction('💩')" class="p-1.5 text-lg hover:scale-135 active:scale-90 transition transform" title="Cà khịa">💩</button>
+  </div>
+
+  <!-- Nút Mở Sổ Ghi Chú Riêng Tư (Góc Dưới Bên Phải) -->
   <button id="btn-toggle-notepad" class="fixed bottom-4 right-4 z-40 px-4 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold shadow-2xl shadow-indigo-600/40 border border-indigo-400/30 flex items-center gap-2 text-xs sm:text-sm transition active:scale-95 hidden">
     <span>📝</span>
     <span>Sổ ghi chú</span>
@@ -156,6 +177,9 @@
           <button id="btn-copy-code-lobby" title="Sao chép mã phòng" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition active:scale-90 text-xs font-semibold flex items-center gap-1.5 border border-slate-700">
             <span>Copy</span>
           </button>
+          <button id="btn-open-qr-lobby" title="Xem mã QR để quét vào phòng" class="p-2 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 transition active:scale-90 text-xs font-bold flex items-center gap-1.5 border border-indigo-500/40">
+            <span>📱 Mã QR</span>
+          </button>
         </div>
       </div>
       <div class="flex items-center gap-2 flex-wrap">
@@ -227,7 +251,7 @@
   </div>
 
   <!-- MÀN HÌNH 3: BÀN CHƠI CHÍNH -->
-  <div id="screen-game" class="w-full max-w-5xl hidden flex-grow flex flex-col gap-4 pb-12">
+  <div id="screen-game" class="w-full max-w-5xl hidden flex-grow flex flex-col gap-4 pb-16">
     <div class="flex flex-wrap gap-2 justify-between items-center bg-slate-900/90 border border-slate-800 backdrop-blur-xl px-5 py-3.5 rounded-2xl shadow-lg">
       <div class="flex items-center gap-3">
         <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Phòng:</span>
@@ -384,6 +408,25 @@
           <span class="text-[10px] text-slate-500 font-medium">Realtime</span>
         </div>
         <div id="game-logs" class="flex-grow overflow-y-auto space-y-2 text-xs text-slate-300 pr-1 custom-scrollbar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL QR CODE VÀO PHÒNG -->
+  <div id="modal-qr-code" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="w-full max-w-sm bg-slate-900 border border-indigo-500/40 rounded-3xl p-6 shadow-2xl flex flex-col items-center text-center gap-4">
+      <div class="flex justify-between items-center w-full pb-2 border-b border-slate-800">
+        <h3 class="text-sm font-black text-indigo-400 uppercase tracking-wider">📱 Quét QR để vào phòng</h3>
+        <button id="btn-close-qr-modal" class="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-100 transition text-sm">✕</button>
+      </div>
+
+      <div class="p-3 bg-slate-950 rounded-2xl border border-slate-800 shadow-inner">
+        <img id="qr-image" src="" alt="Mã QR Phòng" class="w-48 h-48 rounded-xl object-contain">
+      </div>
+
+      <div>
+        <p class="text-xs text-slate-400">Mã phòng: <b id="qr-room-text" class="text-amber-400 font-mono font-black tracking-widest text-base">----</b></p>
+        <p class="text-[11px] text-slate-500 mt-1">Bạn bè quét camera là vào thẳng phòng, không cần gõ mã.</p>
       </div>
     </div>
   </div>
