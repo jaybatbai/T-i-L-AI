@@ -117,6 +117,9 @@ let searchQuery = '';
 let hostTimerEnabled = true;
 let hostTimerDuration = 45;
 
+let hostMaxQuestionsEnabled = false;
+let hostMaxQuestionsCount = 15;
+
 let myPeer = null;
 let myId = null;
 let myName = '';
@@ -135,6 +138,7 @@ let lastTickedSecond = null;
 let lastRenderedQuestionKey = '';
 let previousActivePlayerId = null;
 let lastReactionTimestamp = 0;
+let currentLogFilter = 'ALL'; // 'ALL' | 'MINE'
 
 // ==========================================
 // QUẢN LÝ PHIÊN (SESSION PERSISTENCE)
@@ -308,7 +312,6 @@ window.leaveRoom = function() {
   }
 };
 
-// Hiển thị Popup QR Code
 function showRoomQRCode() {
   if (!currentRoomCode) return;
   sound.pop();
@@ -330,7 +333,7 @@ function showRoomQRCode() {
 // ==========================================
 window.triggerReaction = function(emoji) {
   const now = Date.now();
-  if (now - lastReactionTimestamp < 300) return; // Chống spam lag
+  if (now - lastReactionTimestamp < 300) return;
   lastReactionTimestamp = now;
 
   sound.pop();
@@ -345,8 +348,7 @@ function spawnFloatingEmoji(emoji, senderName = '') {
   const el = document.createElement('div');
   el.className = 'floating-emoji absolute flex flex-col items-center pointer-events-none select-none z-50';
 
-  // Random tọa độ xuất phát ở đáy màn hình
-  const randomLeft = 15 + Math.random() * 70; // 15% - 85%
+  const randomLeft = 15 + Math.random() * 70;
   el.style.left = `${randomLeft}vw`;
   el.style.bottom = '80px';
 
@@ -425,7 +427,7 @@ window.pickSuggestedQuestion = function(questionText) {
   sound.pop();
   const inputQuestion = document.getElementById('input-question');
   const modalQuestionAssistant = document.getElementById('modal-question-assistant');
-  if (inputQuestion) {
+  if (inputQuestion && !inputQuestion.disabled) {
     inputQuestion.value = questionText;
     inputQuestion.focus();
   }
@@ -435,7 +437,7 @@ window.pickSuggestedQuestion = function(questionText) {
 };
 
 // ==========================================
-// LOGIC TIMER & HOST CONTROLS
+// CÀI ĐẶT HOST: TIMER & MAX QUESTIONS
 // ==========================================
 window.setTimerSeconds = function(seconds) {
   if (!isHost) return;
@@ -456,6 +458,29 @@ function updateTimerPillsUI() {
       btn.className = 'timer-btn py-2 rounded-xl border text-xs font-extrabold transition bg-amber-500/20 border-amber-400 text-amber-300 ring-1 ring-amber-400/40';
     } else {
       btn.className = 'timer-btn py-2 rounded-xl border text-xs font-extrabold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600';
+    }
+  });
+}
+
+window.setMaxQuestionsCount = function(count) {
+  if (!isHost) return;
+  sound.pop();
+  hostMaxQuestionsCount = count;
+  updateMaxQuestionsPillsUI();
+
+  if (serverState) {
+    serverState.maxQuestionsCount = hostMaxQuestionsCount;
+    broadcastHostState();
+  }
+};
+
+function updateMaxQuestionsPillsUI() {
+  document.querySelectorAll('.max-q-btn').forEach(btn => {
+    const q = parseInt(btn.dataset.q, 10);
+    if (q === hostMaxQuestionsCount) {
+      btn.className = 'max-q-btn py-2 rounded-xl border text-xs font-extrabold transition bg-emerald-500/20 border-emerald-400 text-emerald-300 ring-1 ring-emerald-400/40';
+    } else {
+      btn.className = 'max-q-btn py-2 rounded-xl border text-xs font-extrabold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600';
     }
   });
 }
@@ -482,16 +507,76 @@ function startHostAuthoritativeTimer() {
       sound.fail();
 
       if (serverState.currentQuestion) {
-        serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-rose-950 text-rose-400 text-[10px] font-extrabold mr-1">HẾT GIỜ</span> Biểu quyết kết thúc do hết thời gian.`);
+        addHostLog(`<span class="px-1.5 py-0.5 rounded bg-rose-950 text-rose-400 text-[10px] font-extrabold mr-1">HẾT GIỜ</span> Biểu quyết kết thúc do hết thời gian.`, { involvedIds: [activePlayer.id] });
         serverState.currentQuestion = null;
       } else {
-        serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-rose-950 text-rose-400 text-[10px] font-extrabold mr-1">HẾT GIỜ</span> <b class="text-amber-400">${activePlayer.name}</b> đã bị tự động bỏ lượt do quá thời gian.`);
+        addHostLog(`<span class="px-1.5 py-0.5 rounded bg-rose-950 text-rose-400 text-[10px] font-extrabold mr-1">HẾT GIỜ</span> <b class="text-amber-400">${activePlayer.name}</b> đã bị tự động bỏ lượt do quá thời gian.`, { involvedIds: [activePlayer.id] });
       }
 
       advanceHostTurn();
       broadcastHostState();
     }
   }, 500);
+}
+
+// Hàm ghi log có cấu trúc để phục vụ lọc "Của tôi"
+function addHostLog(html, { authorId = null, involvedIds = [] } = {}) {
+  if (!serverState) return;
+  const logItem = {
+    id: 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+    html: html,
+    authorId: authorId,
+    involvedIds: Array.isArray(involvedIds) ? involvedIds : []
+  };
+  serverState.logs.push(logItem);
+}
+
+window.setLogFilter = function(filter) {
+  sound.pop();
+  currentLogFilter = filter;
+  const tabAll = document.getElementById('tab-log-all');
+  const tabMine = document.getElementById('tab-log-mine');
+
+  if (filter === 'ALL') {
+    if (tabAll) tabAll.className = 'px-2.5 py-0.5 rounded-lg bg-indigo-600 text-white transition';
+    if (tabMine) tabMine.className = 'px-2.5 py-0.5 rounded-lg text-slate-400 hover:text-slate-200 transition';
+  } else {
+    if (tabAll) tabAll.className = 'px-2.5 py-0.5 rounded-lg text-slate-400 hover:text-slate-200 transition';
+    if (tabMine) tabMine.className = 'px-2.5 py-0.5 rounded-lg bg-indigo-600 text-white transition';
+  }
+
+  renderLogsUI();
+};
+
+function renderLogsUI(logsData = null) {
+  const gameLogs = document.getElementById('game-logs');
+  if (!gameLogs) return;
+
+  const logs = logsData || (serverState ? serverState.logs : []);
+  if (!Array.isArray(logs)) return;
+
+  let filtered = logs;
+  if (currentLogFilter === 'MINE') {
+    filtered = logs.filter(log => {
+      if (typeof log === 'string') return true;
+      return log.authorId === myId || (log.involvedIds && log.involvedIds.includes(myId));
+    });
+  }
+
+  if (filtered.length === 0) {
+    gameLogs.innerHTML = `<span class="text-xs text-slate-500 italic p-2 block text-center">Chưa có hoạt động nào của bạn...</span>`;
+    return;
+  }
+
+  gameLogs.innerHTML = filtered.map(log => {
+    const content = typeof log === 'string' ? log : log.html;
+    return `
+      <div class="py-1.5 px-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 leading-relaxed text-xs">
+        ${content}
+      </div>
+    `;
+  }).join('');
+  gameLogs.scrollTop = gameLogs.scrollHeight;
 }
 
 // ==========================================
@@ -516,6 +601,8 @@ function initHost(roomCode, playerName) {
       currentThemeName: currentThemeName,
       timerEnabled: hostTimerEnabled,
       timerDuration: hostTimerDuration,
+      maxQuestionsEnabled: hostMaxQuestionsEnabled,
+      maxQuestionsCount: hostMaxQuestionsCount,
       turnDeadline: null,
       currentQuestion: null,
       lastTurnResult: null,
@@ -531,10 +618,10 @@ function initHost(roomCode, playerName) {
           isSpectator: false
         }
       ],
-      logs: [
-        `<span class="text-slate-400">Phòng <b class="text-amber-400 font-mono">[${roomCode}]</b> đã tạo bởi <b class="text-slate-200">${playerName}</b>.</span>`
-      ]
+      logs: []
     };
+
+    addHostLog(`<span class="text-slate-400">Phòng <b class="text-amber-400 font-mono">[${roomCode}]</b> đã tạo bởi <b class="text-slate-200">${playerName}</b>.</span>`, { authorId: id });
 
     enterLobbyUI(roomCode, true);
     broadcastHostState();
@@ -570,7 +657,6 @@ function handleClientAction(senderPeerId, data) {
   const { type, payload } = data;
 
   if (type === 'SEND_REACTION') {
-    // Phát tán reaction cho toàn bộ phòng
     connectionsMap.forEach((conn) => {
       if (conn && conn.open && conn.peer !== senderPeerId) {
         conn.send({ type: 'BROADCAST_REACTION', payload });
@@ -589,7 +675,7 @@ function handleClientAction(senderPeerId, data) {
       existingPlayer.id = senderPeerId;
       connectionsMap.delete(oldId);
 
-      serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 text-[10px] font-bold mr-1">TÁI KẾT NỐI</span> <b class="text-amber-400">${payload.name}</b> đã quay lại phòng.`);
+      addHostLog(`<span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 text-[10px] font-bold mr-1">TÁI KẾT NỐI</span> <b class="text-amber-400">${payload.name}</b> đã quay lại phòng.`, { authorId: senderPeerId });
       broadcastHostState();
       return;
     }
@@ -611,9 +697,9 @@ function handleClientAction(senderPeerId, data) {
 
     sound.pop();
     if (isSpectator) {
-      serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-sky-950 text-sky-300 text-[10px] font-bold mr-1">KHÁN GIẢ</span> <b class="text-sky-400">${payload.name}</b> đã vào theo dõi trận đấu.`);
+      addHostLog(`<span class="px-1.5 py-0.5 rounded bg-sky-950 text-sky-300 text-[10px] font-bold mr-1">KHÁN GIẢ</span> <b class="text-sky-400">${payload.name}</b> đã vào theo dõi trận đấu.`, { authorId: senderPeerId });
     } else {
-      serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400 font-bold mr-1">VÀO PHÒNG</span> <b class="text-amber-400">${payload.name}</b> đã tham gia.`);
+      addHostLog(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400 font-bold mr-1">VÀO PHÒNG</span> <b class="text-amber-400">${payload.name}</b> đã tham gia.`, { authorId: senderPeerId });
     }
 
     broadcastHostState();
@@ -635,7 +721,7 @@ function handleClientAction(senderPeerId, data) {
 
     connectionsMap.delete(targetId);
     serverState.players = serverState.players.filter(p => p.id !== targetId);
-    serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-rose-950 text-rose-400 text-[10px] font-extrabold mr-1">KICK</span> Chủ phòng đã mời <b class="text-rose-300">${targetPlayer.name}</b> ra khỏi phòng.`);
+    addHostLog(`<span class="px-1.5 py-0.5 rounded bg-rose-950 text-rose-400 text-[10px] font-extrabold mr-1">KICK</span> Chủ phòng đã mời <b class="text-rose-300">${targetPlayer.name}</b> ra khỏi phòng.`);
 
     if (serverState.state === 'PLAYING') {
       if (serverState.turnIndex >= serverState.players.length) {
@@ -656,7 +742,7 @@ function handleClientAction(senderPeerId, data) {
       if (activeMainPlayers.length < 2) {
         serverState.state = 'LOBBY';
         serverState.currentQuestion = null;
-        serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold mr-1">HỆ THỐNG</span> Phòng thiếu người chơi, trở về trạng thái phòng chờ.`);
+        addHostLog(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold mr-1">HỆ THỐNG</span> Phòng thiếu người chơi, trở về trạng thái phòng chờ.`);
       }
     }
 
@@ -666,6 +752,11 @@ function handleClientAction(senderPeerId, data) {
   if (type === 'ASK_QUESTION') {
     const activePlayer = serverState.players[serverState.turnIndex];
     if (activePlayer.id !== senderPeerId || activePlayer.isSpectator) return;
+
+    // Kiểm tra giới hạn số câu hỏi
+    if (serverState.maxQuestionsEnabled && activePlayer.questionsAskedCount >= serverState.maxQuestionsCount) {
+      return;
+    }
 
     activePlayer.questionsAskedCount = (activePlayer.questionsAskedCount || 0) + 1;
 
@@ -678,7 +769,7 @@ function handleClientAction(senderPeerId, data) {
       answers: {}
     };
     resetTurnTimerDeadline();
-    serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-indigo-900/60 text-indigo-300 text-[10px] font-bold mr-1">HỎI</span> <b class="text-amber-400">${activePlayer.name}</b>: "${payload.question}"`);
+    addHostLog(`<span class="px-1.5 py-0.5 rounded bg-indigo-900/60 text-indigo-300 text-[10px] font-bold mr-1">HỎI</span> <b class="text-amber-400">${activePlayer.name}</b>: "${payload.question}"`, { authorId: activePlayer.id });
     broadcastHostState();
   }
 
@@ -697,7 +788,7 @@ function handleClientAction(senderPeerId, data) {
       answers: {}
     };
     resetTurnTimerDeadline();
-    serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-extrabold mr-1">ĐOÁN TÊN</span> <b class="text-amber-400">${activePlayer.name}</b> đoán mình là: <b class="text-white">"${payload.guessedName}"</b>!`);
+    addHostLog(`<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-extrabold mr-1">ĐOÁN TÊN</span> <b class="text-amber-400">${activePlayer.name}</b> đoán mình là: <b class="text-white">"${payload.guessedName}"</b>!`, { authorId: activePlayer.id });
     broadcastHostState();
   }
 
@@ -742,17 +833,17 @@ function checkPendingVoteCompletion() {
         activePlayer.finishRank = serverState.finishCounter;
 
         sound.victory();
-        serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-emerald-900/80 text-emerald-300 text-[10px] font-bold mr-1">CHÍNH XÁC</span> [Hạng ${activePlayer.finishRank}] <b class="text-amber-400">${activePlayer.name}</b> đã tìm ra nhân vật <b class="text-emerald-300">"${activePlayer.character}"</b>!`);
+        addHostLog(`<span class="px-1.5 py-0.5 rounded bg-emerald-900/80 text-emerald-300 text-[10px] font-bold mr-1">CHÍNH XÁC</span> [Hạng ${activePlayer.finishRank}] <b class="text-amber-400">${activePlayer.name}</b> đã tìm ra nhân vật <b class="text-emerald-300">"${activePlayer.character}"</b>!`, { authorId: activePlayer.id });
         
         const activeMainPlayers = serverState.players.filter(p => !p.isSpectator);
         if (activeMainPlayers.every(p => p.hasGuessedCorrectly)) {
           serverState.state = 'ENDED';
           serverState.turnDeadline = null;
-          serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 text-[10px] font-extrabold mr-1">KẾT THÚC</span> Tất cả người chơi đã hoàn thành ván đấu.`);
+          addHostLog(`<span class="px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 text-[10px] font-extrabold mr-1">KẾT THÚC</span> Tất cả người chơi đã hoàn thành ván đấu.`);
         }
       } else {
         sound.fail();
-        serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-rose-900/80 text-rose-300 text-[10px] font-bold mr-1">CHƯA ĐÚNG</span> Mọi người xác nhận câu đoán "${serverState.currentQuestion.text}" chưa chính xác.`);
+        addHostLog(`<span class="px-1.5 py-0.5 rounded bg-rose-900/80 text-rose-300 text-[10px] font-bold mr-1">CHƯA ĐÚNG</span> Mọi người xác nhận câu đoán "${serverState.currentQuestion.text}" chưa chính xác.`, { authorId: activePlayer.id });
       }
 
       serverState.lastTurnResult = {
@@ -770,7 +861,7 @@ function checkPendingVoteCompletion() {
         return `${voter ? voter.name : 'Người chơi'}: ${ansText}`;
       }).join(', ');
 
-      serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-bold mr-1">KẾT QUẢ</span> <b class="text-amber-400">${activePlayer.name}</b> [${summary}]`);
+      addHostLog(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-bold mr-1">KẾT QUẢ</span> <b class="text-amber-400">${activePlayer.name}</b> [${summary}]`, { authorId: activePlayer.id, involvedIds: answeredKeys });
       
       serverState.lastTurnResult = {
         type: 'QUESTION',
@@ -799,7 +890,7 @@ function advanceHostTurn() {
   resetTurnTimerDeadline();
 
   if (nextPlayer && serverState.state === 'PLAYING' && !nextPlayer.isSpectator && !nextPlayer.hasGuessedCorrectly) {
-    serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold mr-1">LƯỢT MỚI</span> Chuyển tới lượt của <b class="text-amber-400">${nextPlayer.name}</b>.`);
+    addHostLog(`<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold mr-1">LƯỢT MỚI</span> Chuyển tới lượt của <b class="text-amber-400">${nextPlayer.name}</b>.`, { authorId: nextPlayer.id });
   }
 }
 
@@ -808,7 +899,7 @@ function handlePlayerDisconnect(peerId) {
 
   const leaving = serverState.players.find(p => p.id === peerId);
   if (leaving) {
-    serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold mr-1">RỜI PHÒNG</span> <b class="text-slate-300">${leaving.name}</b> đã ngắt kết nối tạm thời.`);
+    addHostLog(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold mr-1">RỜI PHÒNG</span> <b class="text-slate-300">${leaving.name}</b> đã ngắt kết nối tạm thời.`);
   }
 
   if (serverState.state === 'PLAYING') {
@@ -838,6 +929,8 @@ function broadcastHostState() {
       currentThemeName: serverState.currentThemeName || currentThemeName,
       timerEnabled: serverState.timerEnabled,
       timerDuration: serverState.timerDuration,
+      maxQuestionsEnabled: serverState.maxQuestionsEnabled,
+      maxQuestionsCount: serverState.maxQuestionsCount,
       turnDeadline: serverState.turnDeadline,
       turnIndex: serverState.turnIndex,
       activePlayerId: serverState.players[serverState.turnIndex]?.id,
@@ -1028,6 +1121,7 @@ function enterLobbyUI(roomCode, amIHost) {
     loadCharacterPool();
     updateCharacterVaultUI();
     updateTimerPillsUI();
+    updateMaxQuestionsPillsUI();
     if (hostSettings) hostSettings.classList.remove('hidden');
     if (btnStartGame) btnStartGame.classList.remove('hidden');
     if (waitHostMsg) waitHostMsg.classList.add('hidden');
@@ -1163,6 +1257,7 @@ function renderGameState(data) {
   
   const badgeCurrentTheme = document.getElementById('badge-current-theme');
   const badgeLobbyTimer = document.getElementById('badge-lobby-timer');
+  const badgeLobbyQuestions = document.getElementById('badge-lobby-questions');
   const screenAuth = document.getElementById('screen-auth');
   const screenLobby = document.getElementById('screen-lobby');
   const screenGame = document.getElementById('screen-game');
@@ -1173,6 +1268,8 @@ function renderGameState(data) {
   const lobbyPlayerList = document.getElementById('lobby-player-list');
 
   const gameRoomCode = document.getElementById('game-room-code');
+  const gameQuestionsBadge = document.getElementById('game-questions-badge');
+  const gameQuestionsText = document.getElementById('game-questions-text');
   const turnBanner = document.getElementById('turn-banner');
   const btnRestartGame = document.getElementById('btn-restart-game');
   const leaderboardPlayerList = document.getElementById('leaderboard-player-list');
@@ -1185,6 +1282,11 @@ function renderGameState(data) {
   const lastResultBadges = document.getElementById('last-result-badges');
 
   const panelMyTurn = document.getElementById('panel-my-turn');
+  const inputQuestion = document.getElementById('input-question');
+  const btnSendQuestion = document.getElementById('btn-send-question');
+  const btnOpenQuestionAssistant = document.getElementById('btn-open-question-assistant');
+  const turnLimitWarning = document.getElementById('turn-limit-warning');
+
   const panelVoteConfirm = document.getElementById('panel-vote-confirm');
   const votePanelTitle = document.getElementById('vote-panel-title');
   const currentQuestionText = document.getElementById('current-question-text');
@@ -1194,7 +1296,6 @@ function renderGameState(data) {
   const votingButtonsGuess = document.getElementById('voting-buttons-guess');
   const voteCounterBadge = document.getElementById('vote-counter-badge');
   const voteResults = document.getElementById('vote-results');
-  const gameLogs = document.getElementById('game-logs');
 
   if (data.currentThemeName && badgeCurrentTheme) {
     badgeCurrentTheme.textContent = `Chủ đề: ${data.currentThemeName}`;
@@ -1207,6 +1308,16 @@ function renderGameState(data) {
     } else {
       badgeLobbyTimer.textContent = '⏱️ Không giới hạn giờ';
       badgeLobbyTimer.className = 'px-3 py-1.5 bg-slate-800 border border-slate-700 text-slate-400 text-xs font-bold rounded-full';
+    }
+  }
+
+  if (badgeLobbyQuestions) {
+    if (data.maxQuestionsEnabled) {
+      badgeLobbyQuestions.textContent = `🎯 Tối đa: ${data.maxQuestionsCount} câu`;
+      badgeLobbyQuestions.className = 'px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold rounded-full';
+    } else {
+      badgeLobbyQuestions.textContent = '🎯 Không giới hạn câu';
+      badgeLobbyQuestions.className = 'px-3 py-1.5 bg-slate-800 border border-slate-700 text-slate-400 text-xs font-bold rounded-full';
     }
   }
 
@@ -1256,6 +1367,25 @@ function renderGameState(data) {
     if (gameRoomCode) gameRoomCode.textContent = data.roomCode;
     const activePlayer = data.players.find(p => p.id === data.activePlayerId);
     const isMyTurn = data.activePlayerId === myId && !amISpectator;
+
+    // Hiển thị tiến trình số câu hỏi đã dùng
+    if (gameQuestionsBadge && gameQuestionsText) {
+      if (data.maxQuestionsEnabled && !amISpectator) {
+        const used = me?.questionsAskedCount || 0;
+        const max = data.maxQuestionsCount || 15;
+        gameQuestionsBadge.classList.remove('hidden');
+        gameQuestionsBadge.classList.add('flex');
+        gameQuestionsText.textContent = `${used}/${max}`;
+        if (used >= max) {
+          gameQuestionsText.className = 'text-rose-400 font-mono font-black animate-pulse';
+        } else {
+          gameQuestionsText.className = 'text-emerald-400 font-mono font-black';
+        }
+      } else {
+        gameQuestionsBadge.classList.add('hidden');
+        gameQuestionsBadge.classList.remove('flex');
+      }
+    }
 
     if (data.state === 'PLAYING' && isMyTurn && previousActivePlayerId !== data.activePlayerId) {
       sound.yourTurn();
@@ -1381,7 +1511,7 @@ function renderGameState(data) {
                 ? '<span class="text-sky-400 font-bold">👀 Đang xem</span>'
                 : (p.hasGuessedCorrectly 
                   ? `<span class="text-emerald-400 font-bold">✓ Đã đoán đúng (#${p.finishRank})</span>` 
-                  : (p.character === '???' ? '<span class="text-slate-500">Mọi người thấy bạn</span>' : '<span class="text-slate-400">Nhân vật</span>'))
+                  : (p.character === '???' ? `<span class="text-slate-500">${data.maxQuestionsEnabled ? `Đã hỏi ${p.questionsAskedCount || 0}/${data.maxQuestionsCount}` : 'Mọi người thấy bạn'}</span>` : '<span class="text-slate-400">Nhân vật</span>'))
               }
             </div>
           </div>
@@ -1417,9 +1547,36 @@ function renderGameState(data) {
       panelLastResult.classList.add('hidden');
     }
 
+    // Xử lý Bảng thao tác theo lượt & Khóa khi hết câu hỏi
     if (panelMyTurn) {
       if (isMyTurn && data.state === 'PLAYING') {
         panelMyTurn.classList.remove('hidden');
+
+        const isLimitReached = data.maxQuestionsEnabled && (me?.questionsAskedCount >= data.maxQuestionsCount);
+        if (isLimitReached) {
+          if (inputQuestion) {
+            inputQuestion.disabled = true;
+            inputQuestion.placeholder = 'Đã hết lượt hỏi! Hãy chốt đoán tên hoặc bỏ lượt.';
+          }
+          if (btnSendQuestion) btnSendQuestion.disabled = true;
+          if (btnOpenQuestionAssistant) btnOpenQuestionAssistant.disabled = true;
+          if (turnLimitWarning) {
+            turnLimitWarning.textContent = '⚠️ Hết câu hỏi: Chỉ được đoán tên';
+            turnLimitWarning.className = 'text-xs text-rose-400 font-extrabold animate-pulse';
+          }
+        } else {
+          if (inputQuestion) {
+            inputQuestion.disabled = false;
+            inputQuestion.placeholder = 'Ví dụ: Tôi có phải là nhân vật hoạt hình không?...';
+          }
+          if (btnSendQuestion) btnSendQuestion.disabled = false;
+          if (btnOpenQuestionAssistant) btnOpenQuestionAssistant.disabled = false;
+          if (turnLimitWarning) {
+            turnLimitWarning.textContent = 'Hỏi Có/Không hoặc chốt đoán tên';
+            turnLimitWarning.className = 'text-xs text-slate-400 font-medium';
+          }
+        }
+
       } else {
         panelMyTurn.classList.add('hidden');
       }
@@ -1522,14 +1679,7 @@ function renderGameState(data) {
       if (voteCounterBadge) voteCounterBadge.textContent = '';
     }
 
-    if (gameLogs) {
-      gameLogs.innerHTML = data.logs.map(log => `
-        <div class="py-1.5 px-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 leading-relaxed text-xs">
-          ${log}
-        </div>
-      `).join('');
-      gameLogs.scrollTop = gameLogs.scrollHeight;
-    }
+    renderLogsUI(data.logs);
   }
 }
 
@@ -1541,7 +1691,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initNotepad();
   renderQuestionAssistant();
 
-  // Tự động bắt tham số ?room= trên URL (quét mã QR)
   const urlParams = new URLSearchParams(window.location.search);
   const roomParam = urlParams.get('room');
   const inputRoomCode = document.getElementById('input-room-code');
@@ -1553,7 +1702,6 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast(`Đã nhận diện mã phòng [${roomParam.toUpperCase()}] từ liên kết!`);
   }
 
-  // Khôi phục phiên tự động nếu F5 trang
   const existingSession = getSession();
   if (existingSession && existingSession.roomCode && existingSession.playerName) {
     showToast(`Đang kết nối lại phòng [${existingSession.roomCode}]...`);
@@ -1589,6 +1737,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnCopyCodeGame = document.getElementById('btn-copy-code-game');
   const toggleTurnTimer = document.getElementById('toggle-turn-timer');
   const timerOptionsContainer = document.getElementById('timer-options-container');
+
+  const toggleMaxQuestions = document.getElementById('toggle-max-questions');
+  const maxQuestionsOptionsContainer = document.getElementById('max-questions-options-container');
 
   const btnOpenCharModal = document.getElementById('btn-open-char-modal');
   const modalCharManager = document.getElementById('modal-char-manager');
@@ -1721,6 +1872,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (serverState) {
         serverState.timerEnabled = hostTimerEnabled;
+        broadcastHostState();
+      }
+    });
+  }
+
+  if (toggleMaxQuestions) {
+    toggleMaxQuestions.addEventListener('change', (e) => {
+      if (!isHost) return;
+      sound.pop();
+      hostMaxQuestionsEnabled = e.target.checked;
+
+      if (maxQuestionsOptionsContainer) {
+        if (hostMaxQuestionsEnabled) {
+          maxQuestionsOptionsContainer.classList.remove('opacity-40', 'pointer-events-none');
+        } else {
+          maxQuestionsOptionsContainer.classList.add('opacity-40', 'pointer-events-none');
+        }
+      }
+
+      if (serverState) {
+        serverState.maxQuestionsEnabled = hostMaxQuestionsEnabled;
         broadcastHostState();
       }
     });
@@ -1958,7 +2130,7 @@ document.addEventListener('DOMContentLoaded', () => {
       resetTurnTimerDeadline();
       startHostAuthoritativeTimer();
 
-      serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-emerald-900/80 text-emerald-300 text-[10px] font-bold mr-1">BẮT ĐẦU</span> Trận đấu bắt đầu! Lượt đầu: <b class="text-amber-400">${serverState.players[0].name}</b>.`);
+      addHostLog(`<span class="px-1.5 py-0.5 rounded bg-emerald-900/80 text-emerald-300 text-[10px] font-bold mr-1">BẮT ĐẦU</span> Trận đấu bắt đầu! Lượt đầu: <b class="text-amber-400">${serverState.players[0].name}</b>.`);
 
       broadcastHostState();
     });
@@ -1979,7 +2151,7 @@ document.addEventListener('DOMContentLoaded', () => {
       p.finishRank = null;
       p.isSpectator = false;
     });
-    serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-bold mr-1">VÁN MỚI</span> Phòng đang ở trạng thái chuẩn bị ván mới.`);
+    addHostLog(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-bold mr-1">VÁN MỚI</span> Phòng đang ở trạng thái chuẩn bị ván mới.`);
     const modalLeaderboard = document.getElementById('modal-leaderboard');
     if (modalLeaderboard) modalLeaderboard.classList.add('hidden');
     broadcastHostState();
@@ -1991,7 +2163,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnSendQuestion && inputQuestion) {
     btnSendQuestion.addEventListener('click', () => {
       const q = inputQuestion.value.trim();
-      if (!q) return;
+      if (!q || inputQuestion.disabled) return;
       sound.pop();
       sendAction('ASK_QUESTION', { question: q });
       inputQuestion.value = '';
