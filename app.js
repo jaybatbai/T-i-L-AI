@@ -1,7 +1,7 @@
 // ==========================================
-// HỆ THỐNG ÂM THANH WEB AUDIO API
+// HỆ THỐNG ÂM THANH & RUNG PHẢN HỒI (SOUND & HAPTIC)
 // ==========================================
-class SoundEngine {
+class FeedbackEngine {
   constructor() {
     this.ctx = null;
     this.muted = false;
@@ -14,6 +14,14 @@ class SoundEngine {
     }
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume();
+    }
+  }
+
+  vibrate(pattern) {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try {
+        navigator.vibrate(pattern);
+      } catch (e) {}
     }
   }
 
@@ -44,20 +52,34 @@ class SoundEngine {
 
   tick() {
     this.playTone(800, 'sine', 0.08, 0.05);
+    this.vibrate(40);
+  }
+
+  yourTurn() {
+    this.init();
+    if (!this.muted && this.ctx) {
+      this.playTone(523.25, 'triangle', 0.1, 0.15);
+      setTimeout(() => this.playTone(659.25, 'triangle', 0.15, 0.15), 100);
+    }
+    this.vibrate([120, 80, 120]);
   }
 
   success() {
     this.init();
-    if (this.muted || !this.ctx) return;
-    this.playTone(587.33, 'triangle', 0.12, 0.15);
-    setTimeout(() => this.playTone(880, 'triangle', 0.25, 0.2), 100);
+    if (!this.muted && this.ctx) {
+      this.playTone(587.33, 'triangle', 0.12, 0.15);
+      setTimeout(() => this.playTone(880, 'triangle', 0.25, 0.2), 100);
+    }
+    this.vibrate([80, 60, 160]);
   }
 
   fail() {
     this.init();
-    if (this.muted || !this.ctx) return;
-    this.playTone(220, 'sawtooth', 0.2, 0.15);
-    setTimeout(() => this.playTone(174.61, 'sawtooth', 0.35, 0.15), 150);
+    if (!this.muted && this.ctx) {
+      this.playTone(220, 'sawtooth', 0.2, 0.15);
+      setTimeout(() => this.playTone(174.61, 'sawtooth', 0.35, 0.15), 150);
+    }
+    this.vibrate(250);
   }
 
   pop() {
@@ -66,22 +88,25 @@ class SoundEngine {
 
   victory() {
     this.init();
-    if (this.muted || !this.ctx) return;
-    const notes = [523.25, 659.25, 783.99, 1046.50];
-    notes.forEach((freq, idx) => {
-      setTimeout(() => this.playTone(freq, 'triangle', 0.3, 0.15), idx * 120);
-    });
+    if (!this.muted && this.ctx) {
+      const notes = [523.25, 659.25, 783.99, 1046.50];
+      notes.forEach((freq, idx) => {
+        setTimeout(() => this.playTone(freq, 'triangle', 0.3, 0.15), idx * 120);
+      });
+    }
+    this.vibrate([100, 50, 100, 50, 200]);
   }
 }
 
-const sound = new SoundEngine();
+const sound = new FeedbackEngine();
 
 // ==========================================
-// KHỞI TẠO BIẾN TRẠNG THÁI & LOCAL STORAGE
+// KHỞI TẠO BIẾN TRẠNG THÁI & LOCAL/SESSION STORAGE
 // ==========================================
 const STORAGE_KEY_PRESETS = 'whoami_selected_preset_keys_v4';
 const STORAGE_KEY_CUSTOM = 'whoami_custom_character_list_v4';
 const STORAGE_KEY_NOTEPAD = 'whoami_private_notepad_content';
+const SESSION_STORAGE_KEY = 'whoami_active_p2p_session';
 
 let selectedPresetKeys = ['SHOWBIZ'];
 let customCharacters = [];
@@ -108,6 +133,28 @@ let localTimerInterval = null;
 let hostAuthoritativeTimer = null;
 let lastTickedSecond = null;
 let lastRenderedQuestionKey = '';
+let previousActivePlayerId = null;
+
+// ==========================================
+// QUẢN LÝ PHIÊN (SESSION PERSISTENCE)
+// ==========================================
+function saveSession(data) {
+  sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(data));
+}
+
+function getSession() {
+  const saved = sessionStorage.getItem(SESSION_STORAGE_KEY);
+  if (!saved) return null;
+  try {
+    return JSON.parse(saved);
+  } catch (e) {
+    return null;
+  }
+}
+
+function clearSession() {
+  sessionStorage.removeItem(SESSION_STORAGE_KEY);
+}
 
 // ==========================================
 // QUẢN LÝ KHO NHÂN VẬT & PRESET
@@ -214,7 +261,7 @@ window.removeCharacter = function(index) {
 };
 
 // ==========================================
-// TIỆN ÍCH CHUNG
+// TIỆN ÍCH CHUNG & THOÁT PHÒNG
 // ==========================================
 function showToast(msg) {
   const toast = document.getElementById('toast');
@@ -254,8 +301,15 @@ function shuffle(array) {
   return arr;
 }
 
+window.leaveRoom = function() {
+  if (confirm('Bạn có chắc chắn muốn rời khỏi phòng chơi này?')) {
+    clearSession();
+    location.reload();
+  }
+};
+
 // ==========================================
-// SỔ GHI CHÚ RIÊNG TƯ (PRIVATE NOTEPAD)
+// SỔ GHI CHÚ RIÊNG TƯ & GỢI Ý CÂU HỎI
 // ==========================================
 function initNotepad() {
   const textareaNotepad = document.getElementById('textarea-notepad');
@@ -289,6 +343,41 @@ window.insertQuickNote = function(tag) {
   localStorage.setItem(STORAGE_KEY_NOTEPAD, updated);
   updateNotepadUI(updated);
   textareaNotepad.scrollTop = textareaNotepad.scrollHeight;
+};
+
+function renderQuestionAssistant() {
+  const container = document.getElementById('assistant-categories');
+  if (!container || !window.QUESTION_SUGGESTIONS) return;
+
+  container.innerHTML = Object.keys(window.QUESTION_SUGGESTIONS).map(catKey => {
+    const cat = window.QUESTION_SUGGESTIONS[catKey];
+    return `
+      <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-3.5">
+        <span class="text-xs font-black uppercase tracking-wider text-indigo-300 block mb-2.5">${cat.name}</span>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          ${cat.list.map(q => `
+            <button onclick="pickSuggestedQuestion('${q.replace(/'/g, "\\'")}')" class="text-left px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500 hover:bg-slate-850 text-xs font-semibold text-slate-200 transition active:scale-98 flex items-center justify-between group">
+              <span class="truncate">${q}</span>
+              <span class="text-indigo-400 opacity-0 group-hover:opacity-100 transition text-sm">➔</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.pickSuggestedQuestion = function(questionText) {
+  sound.pop();
+  const inputQuestion = document.getElementById('input-question');
+  const modalQuestionAssistant = document.getElementById('modal-question-assistant');
+  if (inputQuestion) {
+    inputQuestion.value = questionText;
+    inputQuestion.focus();
+  }
+  if (modalQuestionAssistant) {
+    modalQuestionAssistant.classList.add('hidden');
+  }
 };
 
 // ==========================================
@@ -354,7 +443,7 @@ function startHostAuthoritativeTimer() {
 // ==========================================
 // LOGIC CHỦ PHÒNG (HOST ENGINE)
 // ==========================================
-function initHost(roomCode, playerName) {
+function initHost(roomCode, playerName, existingPeerId = null) {
   const peerId = `whoami-${roomCode.toLowerCase()}`;
   myPeer = new Peer(peerId);
 
@@ -362,6 +451,8 @@ function initHost(roomCode, playerName) {
     myId = id;
     isHost = true;
     currentRoomCode = roomCode;
+
+    saveSession({ roomCode, playerName, isHost: true });
 
     serverState = {
       code: roomCode,
@@ -382,7 +473,8 @@ function initHost(roomCode, playerName) {
           character: null,
           hasGuessedCorrectly: false,
           questionsAskedCount: 0,
-          finishRank: null
+          finishRank: null,
+          isSpectator: false
         }
       ],
       logs: [
@@ -412,6 +504,7 @@ function initHost(roomCode, playerName) {
   myPeer.on('error', (err) => {
     if (err.type === 'unavailable-id') {
       showToast('Mã phòng này vừa được sử dụng, vui lòng bấm Tạo phòng lại!');
+      clearSession();
     } else {
       showToast('Lỗi kết nối P2P: ' + err.type);
     }
@@ -422,22 +515,43 @@ function handleClientAction(senderPeerId, data) {
   if (!serverState) return;
   const { type, payload } = data;
 
-  if (type === 'JOIN_REQUEST') {
-    if (serverState.state !== 'LOBBY') {
-      const conn = connectionsMap.get(senderPeerId);
-      if (conn && conn.open) conn.send({ type: 'ERROR', message: 'Trò chơi đã bắt đầu rồi!' });
+  // Xử lý Reconnect từ thành viên cũ
+  if (type === 'RECONNECT_REQUEST') {
+    const existingPlayer = serverState.players.find(p => p.name === payload.name);
+    if (existingPlayer) {
+      // Cập nhật socket ID mới cho người chơi cũ
+      const oldId = existingPlayer.id;
+      existingPlayer.id = senderPeerId;
+      connectionsMap.delete(oldId);
+
+      serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 text-[10px] font-bold mr-1">TÁI KẾT NỐI</span> <b class="text-amber-400">${payload.name}</b> đã quay lại phòng.`);
+      broadcastHostState();
       return;
     }
+  }
+
+  // Xử lý Thành viên mới vào phòng hoặc Chuyển sang Spectator nếu trận đã bắt đầu
+  if (type === 'JOIN_REQUEST') {
+    const isMidGame = serverState.state !== 'LOBBY';
+    const isSpectator = isMidGame;
+
     serverState.players.push({
       id: senderPeerId,
       name: payload.name || `Người chơi ${serverState.players.length + 1}`,
-      character: null,
-      hasGuessedCorrectly: false,
+      character: isSpectator ? 'Khán giả' : null,
+      hasGuessedCorrectly: isSpectator,
       questionsAskedCount: 0,
-      finishRank: null
+      finishRank: null,
+      isSpectator: isSpectator
     });
+
     sound.pop();
-    serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400 font-bold mr-1">VÀO PHÒNG</span> <b class="text-amber-400">${payload.name}</b> đã tham gia.`);
+    if (isSpectator) {
+      serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-sky-950 text-sky-300 text-[10px] font-bold mr-1">KHÁN GIẢ</span> <b class="text-sky-400">${payload.name}</b> đã vào theo dõi trận đấu.`);
+    } else {
+      serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400 font-bold mr-1">VÀO PHÒNG</span> <b class="text-amber-400">${payload.name}</b> đã tham gia.`);
+    }
+
     broadcastHostState();
   }
 
@@ -474,10 +588,11 @@ function handleClientAction(senderPeerId, data) {
         }
       }
 
-      if (serverState.players.length < 2) {
+      const activeActualPlayers = serverState.players.filter(p => !p.isSpectator);
+      if (activeActualPlayers.length < 2) {
         serverState.state = 'LOBBY';
         serverState.currentQuestion = null;
-        serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold mr-1">HỆ THỐNG</span> Phòng thiếu người, trở về trạng thái phòng chờ.`);
+        serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold mr-1">HỆ THỐNG</span> Phòng thiếu người chơi, trở về trạng thái phòng chờ.`);
       }
     }
 
@@ -486,7 +601,7 @@ function handleClientAction(senderPeerId, data) {
 
   if (type === 'ASK_QUESTION') {
     const activePlayer = serverState.players[serverState.turnIndex];
-    if (activePlayer.id !== senderPeerId) return;
+    if (activePlayer.id !== senderPeerId || activePlayer.isSpectator) return;
 
     activePlayer.questionsAskedCount = (activePlayer.questionsAskedCount || 0) + 1;
 
@@ -505,7 +620,7 @@ function handleClientAction(senderPeerId, data) {
 
   if (type === 'MAKE_GUESS') {
     const activePlayer = serverState.players[serverState.turnIndex];
-    if (activePlayer.id !== senderPeerId || serverState.state !== 'PLAYING') return;
+    if (activePlayer.id !== senderPeerId || serverState.state !== 'PLAYING' || activePlayer.isSpectator) return;
 
     activePlayer.questionsAskedCount = (activePlayer.questionsAskedCount || 0) + 1;
 
@@ -542,11 +657,16 @@ function handleClientAction(senderPeerId, data) {
   }
 }
 
+// Bỏ qua khán giả khi tính toán số phiếu biểu quyết cần thiết
 function checkPendingVoteCompletion() {
   if (!serverState || !serverState.currentQuestion) return;
   const activePlayer = serverState.players[serverState.turnIndex];
-  const votersNeeded = serverState.players.filter(p => p.id !== activePlayer.id);
-  const answeredKeys = Object.keys(serverState.currentQuestion.answers);
+  
+  // Chỉ tính những người chơi thực thụ đang có mặt (loại trừ người hỏi và khán giả)
+  const votersNeeded = serverState.players.filter(p => p.id !== activePlayer.id && !p.isSpectator);
+  const answeredKeys = Object.keys(serverState.currentQuestion.answers).filter(id => {
+    return votersNeeded.some(v => v.id === id);
+  });
 
   if (answeredKeys.length >= votersNeeded.length && votersNeeded.length > 0) {
     if (serverState.currentQuestion.type === 'GUESS') {
@@ -562,7 +682,9 @@ function checkPendingVoteCompletion() {
         sound.victory();
         serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-emerald-900/80 text-emerald-300 text-[10px] font-bold mr-1">CHÍNH XÁC</span> [Hạng ${activePlayer.finishRank}] <b class="text-amber-400">${activePlayer.name}</b> đã tìm ra nhân vật <b class="text-emerald-300">"${activePlayer.character}"</b>!`);
         
-        if (serverState.players.every(p => p.hasGuessedCorrectly)) {
+        // Kiểm tra xem tất cả người chơi chính đã đoán xong chưa
+        const activeMainPlayers = serverState.players.filter(p => !p.isSpectator);
+        if (activeMainPlayers.every(p => p.hasGuessedCorrectly)) {
           serverState.state = 'ENDED';
           serverState.turnDeadline = null;
           serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 text-[10px] font-extrabold mr-1">KẾT THÚC</span> Tất cả người chơi đã hoàn thành ván đấu.`);
@@ -602,6 +724,7 @@ function checkPendingVoteCompletion() {
   }
 }
 
+// Bỏ qua khán giả và người đã đoán đúng khi chuyển lượt
 function advanceHostTurn() {
   let attempts = 0;
   const totalPlayers = serverState.players.length;
@@ -610,12 +733,12 @@ function advanceHostTurn() {
   do {
     serverState.turnIndex = (serverState.turnIndex + 1) % totalPlayers;
     attempts++;
-  } while (serverState.players[serverState.turnIndex].hasGuessedCorrectly && attempts < totalPlayers);
+  } while ((serverState.players[serverState.turnIndex].hasGuessedCorrectly || serverState.players[serverState.turnIndex].isSpectator) && attempts < totalPlayers);
 
   const nextPlayer = serverState.players[serverState.turnIndex];
   resetTurnTimerDeadline();
 
-  if (nextPlayer && serverState.state === 'PLAYING') {
+  if (nextPlayer && serverState.state === 'PLAYING' && !nextPlayer.isSpectator && !nextPlayer.hasGuessedCorrectly) {
     serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold mr-1">LƯỢT MỚI</span> Chuyển tới lượt của <b class="text-amber-400">${nextPlayer.name}</b>.`);
   }
 }
@@ -625,14 +748,10 @@ function handlePlayerDisconnect(peerId) {
 
   const leaving = serverState.players.find(p => p.id === peerId);
   if (leaving) {
-    serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold mr-1">RỜI PHÒNG</span> <b class="text-slate-300">${leaving.name}</b> đã ngắt kết nối.`);
-  }
-  serverState.players = serverState.players.filter(p => p.id !== peerId);
-
-  if (serverState.turnIndex >= serverState.players.length) {
-    serverState.turnIndex = 0;
+    serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold mr-1">RỜI PHÒNG</span> <b class="text-slate-300">${leaving.name}</b> đã ngắt kết nối tạm thời.`);
   }
 
+  // Nếu người đang có lượt bị ngắt kết nối
   if (serverState.state === 'PLAYING') {
     if (serverState.currentQuestion) {
       if (serverState.currentQuestion.askedById === peerId) {
@@ -674,13 +793,14 @@ function broadcastHostState() {
       players: serverState.players.map(other => ({
         id: other.id,
         name: other.name,
-        character: (other.id === p.id && !other.hasGuessedCorrectly && serverState.state !== 'ENDED')
+        character: (other.id === p.id && !other.hasGuessedCorrectly && serverState.state !== 'ENDED' && !other.isSpectator)
           ? '???'
           : other.character,
         isYou: other.id === p.id,
         hasGuessedCorrectly: other.hasGuessedCorrectly,
         questionsAskedCount: other.questionsAskedCount || 0,
-        finishRank: other.finishRank
+        finishRank: other.finishRank,
+        isSpectator: other.isSpectator
       }))
     };
 
@@ -698,7 +818,7 @@ function broadcastHostState() {
 // ==========================================
 // LOGIC THÀNH VIÊN (CLIENT ENGINE)
 // ==========================================
-function initClient(roomCode, playerName) {
+function initClient(roomCode, playerName, isReconnect = false) {
   myPeer = new Peer();
 
   myPeer.on('open', (id) => {
@@ -706,14 +826,23 @@ function initClient(roomCode, playerName) {
     isHost = false;
     currentRoomCode = roomCode;
 
+    saveSession({ roomCode, playerName, isHost: false });
+
     const hostPeerId = `whoami-${roomCode.toLowerCase()}`;
     hostConnection = myPeer.connect(hostPeerId, { reliable: true });
 
     hostConnection.on('open', () => {
-      hostConnection.send({
-        type: 'JOIN_REQUEST',
-        payload: { name: playerName }
-      });
+      if (isReconnect) {
+        hostConnection.send({
+          type: 'RECONNECT_REQUEST',
+          payload: { name: playerName }
+        });
+      } else {
+        hostConnection.send({
+          type: 'JOIN_REQUEST',
+          payload: { name: playerName }
+        });
+      }
       enterLobbyUI(roomCode, false);
     });
 
@@ -721,6 +850,7 @@ function initClient(roomCode, playerName) {
       if (data.type === 'STATE_UPDATE') {
         renderGameState(data.payload);
       } else if (data.type === 'KICKED') {
+        clearSession();
         alert(data.message || 'Bạn đã bị Chủ phòng mời ra khỏi phòng!');
         location.reload();
       } else if (data.type === 'ERROR') {
@@ -729,14 +859,16 @@ function initClient(roomCode, playerName) {
     });
 
     hostConnection.on('close', () => {
-      showToast('Phòng đã bị đóng bởi Chủ phòng!');
-      setTimeout(() => location.reload(), 2000);
+      showToast('Phòng đã bị đóng hoặc mất kết nối tới Chủ phòng!');
+      clearSession();
+      setTimeout(() => location.reload(), 2500);
     });
   });
 
   myPeer.on('error', (err) => {
     if (err.type === 'peer-unavailable') {
       showToast('Không tìm thấy phòng với mã này! Hãy kiểm tra lại.');
+      clearSession();
     } else {
       showToast('Lỗi kết nối P2P: ' + err.type);
     }
@@ -1014,12 +1146,16 @@ function renderGameState(data) {
     }
   }
 
+  const me = data.players.find(p => p.isYou);
+  const amISpectator = me?.isSpectator || false;
+
   if (data.state === 'LOBBY') {
     if (screenAuth) screenAuth.classList.add('hidden');
     if (screenLobby) screenLobby.classList.remove('hidden');
     if (screenGame) screenGame.classList.add('hidden');
     if (btnToggleNotepad) btnToggleNotepad.classList.add('hidden');
     if (modalLeaderboard) modalLeaderboard.classList.add('hidden');
+    previousActivePlayerId = null;
     handleClientTimer(data);
 
     if (lobbyPlayerCount) lobbyPlayerCount.textContent = data.players.length;
@@ -1043,13 +1179,21 @@ function renderGameState(data) {
   } else if (data.state === 'PLAYING' || data.state === 'ENDED') {
     if (screenLobby) screenLobby.classList.add('hidden');
     if (screenGame) screenGame.classList.remove('hidden');
-    if (btnToggleNotepad) btnToggleNotepad.classList.remove('hidden');
+    if (btnToggleNotepad) {
+      if (amISpectator) btnToggleNotepad.classList.add('hidden');
+      else btnToggleNotepad.classList.remove('hidden');
+    }
 
     handleClientTimer(data);
 
     if (gameRoomCode) gameRoomCode.textContent = data.roomCode;
     const activePlayer = data.players.find(p => p.id === data.activePlayerId);
-    const isMyTurn = data.activePlayerId === myId;
+    const isMyTurn = data.activePlayerId === myId && !amISpectator;
+
+    if (data.state === 'PLAYING' && isMyTurn && previousActivePlayerId !== data.activePlayerId) {
+      sound.yourTurn();
+    }
+    previousActivePlayerId = data.activePlayerId;
 
     if (btnRestartGame) {
       if (data.state === 'ENDED' && data.isHost) {
@@ -1065,7 +1209,7 @@ function renderGameState(data) {
         turnBanner.className = 'text-xs sm:text-sm font-extrabold px-4 py-1.5 rounded-full bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20';
       }
 
-      const sortedPlayers = [...data.players].sort((a, b) => {
+      const sortedPlayers = [...data.players].filter(p => !p.isSpectator).sort((a, b) => {
         if (a.finishRank && b.finishRank) return a.finishRank - b.finishRank;
         if (a.finishRank) return -1;
         if (b.finishRank) return 1;
@@ -1115,12 +1259,17 @@ function renderGameState(data) {
     } else {
       if (modalLeaderboard) modalLeaderboard.classList.add('hidden');
       if (turnBanner) {
-        turnBanner.textContent = isMyTurn ? 'ĐANG LÀ LƯỢT CỦA BẠN' : `Lượt của: ${activePlayer?.name || '...'}`;
-        turnBanner.className = `text-xs sm:text-sm font-bold px-4 py-1.5 rounded-full transition-all ${
-          isMyTurn 
-            ? 'bg-amber-400 text-slate-950 font-black shadow-lg shadow-amber-400/30 animate-bounce' 
-            : 'bg-slate-800 text-slate-300 border border-slate-700'
-        }`;
+        if (amISpectator) {
+          turnBanner.textContent = `👀 Bạn đang xem (${activePlayer?.name || '...'})`;
+          turnBanner.className = 'text-xs sm:text-sm font-bold px-4 py-1.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/40';
+        } else {
+          turnBanner.textContent = isMyTurn ? 'ĐANG LÀ LƯỢT CỦA BẠN' : `Lượt của: ${activePlayer?.name || '...'}`;
+          turnBanner.className = `text-xs sm:text-sm font-bold px-4 py-1.5 rounded-full transition-all ${
+            isMyTurn 
+              ? 'bg-amber-400 text-slate-950 font-black shadow-lg shadow-amber-400/30 animate-bounce' 
+              : 'bg-slate-800 text-slate-300 border border-slate-700'
+          }`;
+        }
       }
     }
 
@@ -1149,20 +1298,23 @@ function renderGameState(data) {
               <span class="text-sm font-black text-slate-100 truncate tracking-wide">
                 ${p.name}
               </span>
+              ${p.isSpectator ? '<span class="px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[9px] font-extrabold">Khán giả</span>' : ''}
               ${isSelf ? '<span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-extrabold">Bạn</span>' : ''}
               ${p.id === data.hostId ? '<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-extrabold">Host</span>' : ''}
             </div>
 
             <div class="w-full py-3 px-2 rounded-xl bg-slate-950 border border-slate-800/90 flex items-center justify-center min-h-[52px] shadow-inner">
-              <span class="font-extrabold text-sm sm:text-base ${p.character === '???' ? 'text-amber-400 font-mono tracking-widest text-lg' : 'text-emerald-400'}">
+              <span class="font-extrabold text-sm sm:text-base ${p.character === '???' ? 'text-amber-400 font-mono tracking-widest text-lg' : (p.isSpectator ? 'text-slate-400 text-xs' : 'text-emerald-400')}">
                 ${p.character}
               </span>
             </div>
 
             <div class="mt-2 text-[10px] font-semibold text-slate-400 flex items-center gap-1">
-              ${p.hasGuessedCorrectly 
-                ? `<span class="text-emerald-400 font-bold">✓ Đã đoán đúng (#${p.finishRank})</span>` 
-                : (p.character === '???' ? '<span class="text-slate-500">Mọi người thấy bạn</span>' : '<span class="text-slate-400">Nhân vật</span>')
+              ${p.isSpectator 
+                ? '<span class="text-sky-400 font-bold">👀 Đang xem</span>'
+                : (p.hasGuessedCorrectly 
+                  ? `<span class="text-emerald-400 font-bold">✓ Đã đoán đúng (#${p.finishRank})</span>` 
+                  : (p.character === '???' ? '<span class="text-slate-500">Mọi người thấy bạn</span>' : '<span class="text-slate-400">Nhân vật</span>'))
               }
             </div>
           </div>
@@ -1234,7 +1386,7 @@ function renderGameState(data) {
 
         if (votingButtonsRegular) votingButtonsRegular.classList.add('hidden');
         if (votingButtonsGuess) {
-          if (!isMyTurn && data.state === 'PLAYING') {
+          if (!isMyTurn && data.state === 'PLAYING' && !amISpectator) {
             votingButtonsGuess.classList.remove('hidden');
           } else {
             votingButtonsGuess.classList.add('hidden');
@@ -1253,7 +1405,7 @@ function renderGameState(data) {
 
         if (votingButtonsGuess) votingButtonsGuess.classList.add('hidden');
         if (votingButtonsRegular) {
-          if (!isMyTurn && data.state === 'PLAYING') {
+          if (!isMyTurn && data.state === 'PLAYING' && !amISpectator) {
             votingButtonsRegular.classList.remove('hidden');
           } else {
             votingButtonsRegular.classList.add('hidden');
@@ -1263,9 +1415,9 @@ function renderGameState(data) {
 
       const answers = data.currentQuestion.answers || {};
       const answerKeys = Object.keys(answers);
-      const totalVoters = data.players.length - 1;
+      const totalVoters = data.players.filter(p => !p.isSpectator).length - 1;
 
-      if (voteCounterBadge) voteCounterBadge.textContent = `${answerKeys.length}/${totalVoters} người đã trả lời`;
+      if (voteCounterBadge) voteCounterBadge.textContent = `${answerKeys.length}/${Math.max(1, totalVoters)} người đã trả lời`;
 
       if (voteResults) {
         if (answerKeys.length > 0) {
@@ -1320,6 +1472,18 @@ function renderGameState(data) {
 document.addEventListener('DOMContentLoaded', () => {
   loadCharacterPool();
   initNotepad();
+  renderQuestionAssistant();
+
+  // Khôi phục phiên tự động nếu F5 trang
+  const existingSession = getSession();
+  if (existingSession && existingSession.roomCode && existingSession.playerName) {
+    showToast(`Đang kết nối lại phòng [${existingSession.roomCode}]...`);
+    if (existingSession.isHost) {
+      initHost(existingSession.roomCode, existingSession.playerName);
+    } else {
+      initClient(existingSession.roomCode, existingSession.playerName, true);
+    }
+  }
 
   const btnToggleSound = document.getElementById('btn-toggle-sound');
   const soundIcon = document.getElementById('sound-icon');
@@ -1330,6 +1494,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnCloseNotepad = document.getElementById('btn-close-notepad');
   const btnClearNotepad = document.getElementById('btn-clear-notepad');
   const textareaNotepad = document.getElementById('textarea-notepad');
+
+  const btnOpenQuestionAssistant = document.getElementById('btn-open-question-assistant');
+  const modalQuestionAssistant = document.getElementById('modal-question-assistant');
+  const btnCloseAssistantModal = document.getElementById('btn-close-assistant-modal');
 
   const inputName = document.getElementById('input-name');
   const inputRoomCode = document.getElementById('input-room-code');
@@ -1386,6 +1554,21 @@ document.addEventListener('DOMContentLoaded', () => {
         btnToggleSound.classList.remove('text-slate-500');
         btnToggleSound.classList.add('text-amber-400');
       }
+    });
+  }
+
+  if (btnOpenQuestionAssistant && modalQuestionAssistant) {
+    btnOpenQuestionAssistant.addEventListener('click', () => {
+      sound.pop();
+      renderQuestionAssistant();
+      modalQuestionAssistant.classList.remove('hidden');
+    });
+  }
+
+  if (btnCloseAssistantModal && modalQuestionAssistant) {
+    btnCloseAssistantModal.addEventListener('click', () => {
+      sound.pop();
+      modalQuestionAssistant.classList.add('hidden');
     });
   }
 
@@ -1656,6 +1839,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnStartGame) {
     btnStartGame.addEventListener('click', () => {
       if (!isHost || !serverState) return;
+
+      // Đưa tất cả khán giả thành người chơi chính thức khi ván mới bắt đầu
+      serverState.players.forEach(p => {
+        p.isSpectator = false;
+      });
+
       if (serverState.players.length < 2) {
         return showToast('Cần ít nhất 2 người chơi để bắt đầu!');
       }
@@ -1700,6 +1889,7 @@ document.addEventListener('DOMContentLoaded', () => {
       p.hasGuessedCorrectly = false;
       p.questionsAskedCount = 0;
       p.finishRank = null;
+      p.isSpectator = false; // Reset khán giả thành người chơi chính thức
     });
     serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-bold mr-1">VÁN MỚI</span> Phòng đang ở trạng thái chuẩn bị ván mới.`);
     const modalLeaderboard = document.getElementById('modal-leaderboard');
