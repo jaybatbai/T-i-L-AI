@@ -53,7 +53,7 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-start p-3 sm:p-6 selection:bg-amber-500 selection:text-slate-950 relative overflow-x-hidden">
 
-  <!-- Container Chứa Biểu Cảm Bay (Floating Reaction Canvas) -->
+  <!-- Container Chứa Biểu Cảm Bay -->
   <div id="reaction-canvas" class="fixed inset-0 pointer-events-none z-50 overflow-hidden"></div>
 
   <!-- Toast Notification -->
@@ -68,17 +68,17 @@
     <span id="sound-text" class="hidden sm:inline">Bật âm</span>
   </button>
 
-  <!-- Thanh Thả Reaction Nổi Trong Trận Đấu (Góc Dưới Bên Trái) -->
+  <!-- Thanh Thả Reaction Nổi -->
   <div id="panel-reactions" class="fixed bottom-4 left-4 z-40 bg-slate-900/90 border border-slate-800 backdrop-blur-xl px-3 py-2 rounded-2xl shadow-2xl flex items-center gap-1.5 hidden transition-all">
-    <button onclick="triggerReaction('😂')" class="p-1.5 text-lg hover:scale-135 active:scale-90 transition transform" title="Cười nghiêng ngả">😂</button>
-    <button onclick="triggerReaction('🔥')" class="p-1.5 text-lg hover:scale-135 active:scale-90 transition transform" title="Cháy quá">🔥</button>
-    <button onclick="triggerReaction('🤡')" class="p-1.5 text-lg hover:scale-135 active:scale-90 transition transform" title="Hề hước">🤡</button>
+    <button onclick="triggerReaction('😂')" class="p-1.5 text-lg hover:scale-135 active:scale-90 transition transform" title="Cười">😂</button>
+    <button onclick="triggerReaction('🔥')" class="p-1.5 text-lg hover:scale-135 active:scale-90 transition transform" title="Cháy">🔥</button>
+    <button onclick="triggerReaction('🤡')" class="p-1.5 text-lg hover:scale-135 active:scale-90 transition transform" title="Hề">🤡</button>
     <button onclick="triggerReaction('👏')" class="p-1.5 text-lg hover:scale-135 active:scale-90 transition transform" title="Vỗ tay">👏</button>
     <button onclick="triggerReaction('😱')" class="p-1.5 text-lg hover:scale-135 active:scale-90 transition transform" title="Bất ngờ">😱</button>
     <button onclick="triggerReaction('💩')" class="p-1.5 text-lg hover:scale-135 active:scale-90 transition transform" title="Cà khịa">💩</button>
   </div>
 
-  <!-- Nút Mở Sổ Ghi Chú Riêng Tư (Góc Dưới Bên Phải) -->
+  <!-- Nút Mở Sổ Ghi Chú -->
   <button id="btn-toggle-notepad" class="fixed bottom-4 right-4 z-40 px-4 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold shadow-2xl shadow-indigo-600/40 border border-indigo-400/30 flex items-center gap-2 text-xs sm:text-sm transition active:scale-95 hidden">
     <span>📝</span>
     <span>Sổ ghi chú</span>
@@ -189,6 +189,9 @@
         <div id="badge-lobby-timer" class="px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold rounded-full">
           ⏱️ 45s / lượt
         </div>
+        <div id="badge-lobby-questions" class="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold rounded-full">
+          🎯 Không giới hạn câu
+        </div>
         <button onclick="leaveRoom()" class="px-3 py-1.5 bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 text-rose-400 text-xs font-bold rounded-full transition active:scale-95">
           🚪 Rời phòng
         </button>
@@ -218,7 +221,8 @@
         </button>
       </div>
 
-      <div>
+      <!-- 1. Cài đặt Giới hạn thời gian -->
+      <div class="pb-3 border-b border-slate-850">
         <div class="flex items-center justify-between mb-2.5">
           <div class="flex items-center gap-2">
             <span class="text-xs font-extrabold uppercase tracking-wider text-slate-200">⏱️ Giới hạn thời gian lượt</span>
@@ -237,6 +241,28 @@
           <button type="button" onclick="setTimerSeconds(90)" class="timer-btn py-2 rounded-xl border text-xs font-extrabold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600" data-sec="90">90 Giây</button>
         </div>
       </div>
+
+      <!-- 2. Cài đặt Giới hạn số câu hỏi tối đa -->
+      <div>
+        <div class="flex items-center justify-between mb-2.5">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-slate-200">🎯 Giới hạn số câu hỏi / người</span>
+            <span class="text-[11px] text-slate-400">(Hết câu chỉ được đoán tên)</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="toggle-max-questions" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+          </label>
+        </div>
+
+        <div id="max-questions-options-container" class="grid grid-cols-4 gap-2 transition-all opacity-40 pointer-events-none">
+          <button type="button" onclick="setMaxQuestionsCount(10)" class="max-q-btn py-2 rounded-xl border text-xs font-extrabold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600" data-q="10">10 Câu</button>
+          <button type="button" onclick="setMaxQuestionsCount(15)" class="max-q-btn py-2 rounded-xl border text-xs font-extrabold transition bg-emerald-500/20 border-emerald-400 text-emerald-300 ring-1 ring-emerald-400/40" data-q="15">15 Câu</button>
+          <button type="button" onclick="setMaxQuestionsCount(20)" class="max-q-btn py-2 rounded-xl border text-xs font-extrabold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600" data-q="20">20 Câu</button>
+          <button type="button" onclick="setMaxQuestionsCount(25)" class="max-q-btn py-2 rounded-xl border text-xs font-extrabold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600" data-q="25">25 Câu</button>
+        </div>
+      </div>
+
     </div>
 
     <div>
@@ -262,6 +288,12 @@
       </div>
 
       <div class="flex items-center gap-3">
+        <!-- Đếm số câu hỏi của bạn -->
+        <div id="game-questions-badge" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-300">
+          <span>🎯</span>
+          <span id="game-questions-text" class="text-emerald-400 font-mono font-black">0/15</span>
+        </div>
+
         <div id="game-timer-container" class="hidden items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 font-mono font-black text-sm">
           <span class="text-slate-400 text-xs">⏳</span>
           <span id="game-timer-text" class="text-amber-400 tracking-wider">45s</span>
@@ -308,17 +340,17 @@
               <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
               <span class="text-xs font-extrabold text-amber-400 uppercase tracking-wider">Đang là lượt của bạn</span>
             </div>
-            <span class="text-xs text-slate-400 font-medium">Hỏi Có/Không hoặc chốt đoán tên</span>
+            <span id="turn-limit-warning" class="text-xs text-slate-400 font-medium">Hỏi Có/Không hoặc chốt đoán tên</span>
           </div>
 
           <div class="space-y-3">
             <div class="flex gap-2">
-              <input id="input-question" type="text" placeholder="Ví dụ: Tôi có phải là nhân vật hoạt hình không?..." class="flex-grow bg-slate-950 border border-slate-700/80 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 text-slate-100 placeholder-slate-500">
+              <input id="input-question" type="text" placeholder="Ví dụ: Tôi có phải là nhân vật hoạt hình không?..." class="flex-grow bg-slate-950 border border-slate-700/80 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 text-slate-100 placeholder-slate-500 disabled:opacity-40 disabled:cursor-not-allowed">
               <button id="btn-open-question-assistant" class="px-3.5 py-3 rounded-2xl bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/40 text-xs font-extrabold transition active:scale-95 flex items-center gap-1.5 flex-shrink-0" title="Mở danh sách câu hỏi mẫu">
                 <span>💡</span>
                 <span class="hidden sm:inline">Gợi ý</span>
               </button>
-              <button id="btn-send-question" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-5 py-3 rounded-2xl text-sm transition shadow-lg shadow-amber-500/20 active:scale-95 flex-shrink-0">
+              <button id="btn-send-question" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-5 py-3 rounded-2xl text-sm transition shadow-lg shadow-amber-500/20 active:scale-95 flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed">
                 Hỏi
               </button>
             </div>
@@ -399,13 +431,16 @@
 
       </div>
 
-      <!-- Logs -->
+      <!-- Logs với Tab Lọc (Tất cả vs Của tôi) -->
       <div class="bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-3xl p-4 flex flex-col h-72 md:h-auto shadow-xl">
         <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-800">
           <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">
             Nhật ký diễn biến
           </span>
-          <span class="text-[10px] text-slate-500 font-medium">Realtime</span>
+          <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-[11px] font-bold">
+            <button id="tab-log-all" onclick="setLogFilter('ALL')" class="px-2.5 py-0.5 rounded-lg bg-indigo-600 text-white transition">Tất cả</button>
+            <button id="tab-log-mine" onclick="setLogFilter('MINE')" class="px-2.5 py-0.5 rounded-lg text-slate-400 hover:text-slate-200 transition">Của tôi</button>
+          </div>
         </div>
         <div id="game-logs" class="flex-grow overflow-y-auto space-y-2 text-xs text-slate-300 pr-1 custom-scrollbar"></div>
       </div>
@@ -431,7 +466,7 @@
     </div>
   </div>
 
-  <!-- MODAL GỢI Ý CÂU HỎI (QUESTION ASSISTANT) -->
+  <!-- MODAL GỢI Ý CÂU HỎI -->
   <div id="modal-question-assistant" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4 hidden">
     <div class="w-full max-w-lg bg-slate-900 border border-indigo-500/40 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col max-h-[85vh]">
       <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
@@ -445,7 +480,6 @@
         <button id="btn-close-assistant-modal" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition">✕</button>
       </div>
 
-      <!-- Categories Container -->
       <div id="assistant-categories" class="flex-grow overflow-y-auto space-y-4 pr-1 custom-scrollbar"></div>
     </div>
   </div>
