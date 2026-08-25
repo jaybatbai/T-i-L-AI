@@ -1,5 +1,5 @@
 // ==========================================
-// HỆ THỐNG ÂM THANH ĐA VŨ TRỤ (THEMED SOUND & HAPTIC)
+// HỆ THỐNG ÂM THANH & RUNG PHẢN HỒI (SOUND & HAPTIC)
 // ==========================================
 class FeedbackEngine {
   constructor() {
@@ -61,8 +61,8 @@ class FeedbackEngine {
   yourTurn() {
     this.init();
     if (!this.muted && this.ctx) {
-      this.playTone(523.25, 'triangle', 0.1, 0.15); // C5
-      this.playTone(659.25, 'triangle', 0.15, 0.15, 100); // E5
+      this.playTone(523.25, 'triangle', 0.1, 0.15);
+      this.playTone(659.25, 'triangle', 0.15, 0.15, 100);
     }
     this.vibrate([120, 80, 120]);
   }
@@ -70,8 +70,8 @@ class FeedbackEngine {
   success() {
     this.init();
     if (!this.muted && this.ctx) {
-      this.playTone(587.33, 'triangle', 0.12, 0.15); // D5
-      this.playTone(880, 'triangle', 0.25, 0.2, 100); // A5
+      this.playTone(587.33, 'triangle', 0.12, 0.15);
+      this.playTone(880, 'triangle', 0.25, 0.2, 100);
     }
     this.vibrate([80, 60, 160]);
   }
@@ -89,7 +89,6 @@ class FeedbackEngine {
     this.playTone(400, 'sine', 0.05, 0.08);
   }
 
-  // Fanfare chiến thắng biến đổi theo gói chủ đề của nhân vật
   victory(characterName = '') {
     this.init();
     this.vibrate([100, 50, 100, 50, 200]);
@@ -98,31 +97,26 @@ class FeedbackEngine {
     const themeKey = getThemeKeyByCharacter(characterName);
 
     if (themeKey === 'ANIME') {
-      // 8-bit Chiptune Victory Run
       const notes = [440, 554.37, 659.25, 880, 1108.73, 1318.51];
       notes.forEach((freq, idx) => {
         this.playTone(freq, 'square', 0.12, 0.1, idx * 80);
       });
     } else if (themeKey === 'HEROES') {
-      // Heroic Brass Fanfare
       const notes = [392, 523.25, 659.25, 783.99, 1046.5];
       notes.forEach((freq, idx) => {
         this.playTone(freq, 'sawtooth', 0.25, 0.12, idx * 110);
       });
     } else if (themeKey === 'MEME' || themeKey === 'STREAMER') {
-      // Retro Level-Up / Arcade Chime
       const notes = [261.63, 329.63, 392, 523.25, 659.25, 783.99, 1046.5];
       notes.forEach((freq, idx) => {
         this.playTone(freq, 'sine', 0.1, 0.12, idx * 70);
       });
     } else if (themeKey === 'CARTOON') {
-      // Cổ tích / Chuông ngân Disney
       const notes = [523.25, 659.25, 783.99, 1046.5, 1318.51];
       notes.forEach((freq, idx) => {
         this.playTone(freq, 'triangle', 0.22, 0.14, idx * 100);
       });
     } else {
-      // Showbiz / All-Stars Pop Chord
       const notes = [523.25, 659.25, 783.99, 1046.5];
       notes.forEach((freq, idx) => {
         this.playTone(freq, 'triangle', 0.3, 0.15, idx * 120);
@@ -133,7 +127,6 @@ class FeedbackEngine {
 
 const sound = new FeedbackEngine();
 
-// Hàm tra cứu nguồn gốc nhân vật thuộc gói chủ đề nào
 function getThemeKeyByCharacter(characterName) {
   if (!characterName || !window.PRESET_THEMES) return 'SHOWBIZ';
   for (const key of Object.keys(window.PRESET_THEMES)) {
@@ -257,13 +250,11 @@ function rebuildCharacterPool() {
   if (customCharacters.length > 0) names.push('Tự chọn');
 
   if (names.length === 0) {
-    currentThemeName = 'Trống (Hãy chọn chủ đề)';
+    currentThemeName = 'Trống';
   } else if (names.length === 1) {
     currentThemeName = names[0];
-  } else if (names.length <= 2) {
-    currentThemeName = names.join(' + ');
   } else {
-    currentThemeName = `${names.slice(0, 2).join(' + ')} (+${names.length - 2})`;
+    currentThemeName = `${names[0]} (+${names.length - 1})`;
   }
 
   saveCharacterPool();
@@ -281,13 +272,13 @@ window.togglePresetTheme = function(presetKey) {
   const idx = selectedPresetKeys.indexOf(presetKey);
   if (idx > -1) {
     if (selectedPresetKeys.length === 1 && customCharacters.length === 0) {
-      return showToast('Cần giữ ít nhất 1 chủ đề hoặc nạp nhân vật tùy chọn!');
+      return showToast('Cần giữ ít nhất 1 chủ đề!');
     }
     selectedPresetKeys.splice(idx, 1);
-    showToast(`Đã bỏ chọn gói [${window.PRESET_THEMES[presetKey].shortName}]`);
+    showToast(`Bỏ gói [${window.PRESET_THEMES[presetKey].shortName}]`);
   } else {
     selectedPresetKeys.push(presetKey);
-    showToast(`Đã thêm gói [${window.PRESET_THEMES[presetKey].shortName}]!`);
+    showToast(`Thêm gói [${window.PRESET_THEMES[presetKey].shortName}]`);
   }
 
   sound.pop();
@@ -302,7 +293,7 @@ window.togglePresetTheme = function(presetKey) {
 
 window.removeCharacter = function(index) {
   if (currentCharacterPool.length <= 2) {
-    return showToast('Cần giữ lại ít nhất 2 nhân vật trong kho!');
+    return showToast('Cần giữ lại ít nhất 2 nhân vật!');
   }
   sound.pop();
   const charToRemove = currentCharacterPool[index];
@@ -326,14 +317,14 @@ function showToast(msg) {
   setTimeout(() => {
     toast.classList.remove('opacity-100', 'translate-y-0');
     toast.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
-  }, 3000);
+  }, 2500);
 }
 
 function copyRoomCode() {
   if (!currentRoomCode) return;
   sound.pop();
   navigator.clipboard.writeText(currentRoomCode).then(() => {
-    showToast(`Đã sao chép mã phòng: ${currentRoomCode}`);
+    showToast(`Đã sao chép mã: ${currentRoomCode}`);
   }).catch(() => {
     showToast(`Mã phòng: ${currentRoomCode}`);
   });
@@ -353,7 +344,7 @@ function shuffle(array) {
 }
 
 window.leaveRoom = function() {
-  if (confirm('Bạn có chắc chắn muốn rời khỏi phòng chơi này?')) {
+  if (confirm('Bạn muốn rời khỏi phòng này?')) {
     clearSession();
     location.reload();
   }
@@ -455,13 +446,13 @@ function renderQuestionAssistant() {
   container.innerHTML = Object.keys(window.QUESTION_SUGGESTIONS).map(catKey => {
     const cat = window.QUESTION_SUGGESTIONS[catKey];
     return `
-      <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-3.5">
-        <span class="text-xs font-black uppercase tracking-wider text-indigo-300 block mb-2.5">${cat.name}</span>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-3">
+        <span class="text-[11px] font-black uppercase tracking-wider text-indigo-300 block mb-2">${cat.name}</span>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
           ${cat.list.map(q => `
-            <button onclick="pickSuggestedQuestion('${q.replace(/'/g, "\\'")}')" class="text-left p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500 hover:bg-slate-850 text-xs font-semibold text-slate-200 transition active:scale-98 flex items-start justify-between gap-2 group">
+            <button onclick="pickSuggestedQuestion('${q.replace(/'/g, "\\'")}')" class="text-left p-2.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500 hover:bg-slate-850 text-xs font-semibold text-slate-200 transition active:scale-98 flex items-start justify-between gap-2 group">
               <span class="leading-relaxed break-words flex-grow">${q}</span>
-              <span class="text-indigo-400 opacity-0 group-hover:opacity-100 transition text-sm flex-shrink-0 mt-0.5">➔</span>
+              <span class="text-indigo-400 opacity-0 group-hover:opacity-100 transition text-xs flex-shrink-0 mt-0.5">➔</span>
             </button>
           `).join('')}
         </div>
@@ -502,9 +493,9 @@ function updateTimerPillsUI() {
   document.querySelectorAll('.timer-btn').forEach(btn => {
     const sec = parseInt(btn.dataset.sec, 10);
     if (sec === hostTimerDuration) {
-      btn.className = 'timer-btn py-2 rounded-xl border text-xs font-extrabold transition bg-amber-500/20 border-amber-400 text-amber-300 ring-1 ring-amber-400/40';
+      btn.className = 'timer-btn py-1.5 rounded-xl border text-xs font-extrabold transition bg-amber-500/20 border-amber-400 text-amber-300 ring-1 ring-amber-400/40';
     } else {
-      btn.className = 'timer-btn py-2 rounded-xl border text-xs font-extrabold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600';
+      btn.className = 'timer-btn py-1.5 rounded-xl border text-xs font-extrabold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600';
     }
   });
 }
@@ -525,9 +516,9 @@ function updateMaxQuestionsPillsUI() {
   document.querySelectorAll('.max-q-btn').forEach(btn => {
     const q = parseInt(btn.dataset.q, 10);
     if (q === hostMaxQuestionsCount) {
-      btn.className = 'max-q-btn py-2 rounded-xl border text-xs font-extrabold transition bg-emerald-500/20 border-emerald-400 text-emerald-300 ring-1 ring-emerald-400/40';
+      btn.className = 'max-q-btn py-1.5 rounded-xl border text-xs font-extrabold transition bg-emerald-500/20 border-emerald-400 text-emerald-300 ring-1 ring-emerald-400/40';
     } else {
-      btn.className = 'max-q-btn py-2 rounded-xl border text-xs font-extrabold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600';
+      btn.className = 'max-q-btn py-1.5 rounded-xl border text-xs font-extrabold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600';
     }
   });
 }
@@ -554,10 +545,10 @@ function startHostAuthoritativeTimer() {
       sound.fail();
 
       if (serverState.currentQuestion) {
-        addHostLog(`<span class="px-1.5 py-0.5 rounded bg-rose-950 text-rose-400 text-[10px] font-extrabold mr-1">HẾT GIỜ</span> Biểu quyết kết thúc do hết thời gian.`, { involvedIds: [activePlayer.id] });
+        addHostLog(`⏱️ <b>Hết giờ:</b> Kết thúc lượt biểu quyết`, { involvedIds: [activePlayer.id] });
         serverState.currentQuestion = null;
       } else {
-        addHostLog(`<span class="px-1.5 py-0.5 rounded bg-rose-950 text-rose-400 text-[10px] font-extrabold mr-1">HẾT GIỜ</span> <b class="text-amber-400">${activePlayer.name}</b> đã bị tự động bỏ lượt do quá thời gian.`, { involvedIds: [activePlayer.id] });
+        addHostLog(`⏱️ <b>Hết giờ:</b> <span class="text-amber-400">${activePlayer.name}</span> bị bỏ lượt`, { involvedIds: [activePlayer.id] });
       }
 
       advanceHostTurn();
@@ -584,11 +575,11 @@ window.setLogFilter = function(filter) {
   const tabMine = document.getElementById('tab-log-mine');
 
   if (filter === 'ALL') {
-    if (tabAll) tabAll.className = 'px-2.5 py-0.5 rounded-lg bg-indigo-600 text-white transition';
-    if (tabMine) tabMine.className = 'px-2.5 py-0.5 rounded-lg text-slate-400 hover:text-slate-200 transition';
+    if (tabAll) tabAll.className = 'px-2 py-0.5 rounded-lg bg-indigo-600 text-white transition';
+    if (tabMine) tabMine.className = 'px-2 py-0.5 rounded-lg text-slate-400 hover:text-slate-200 transition';
   } else {
-    if (tabAll) tabAll.className = 'px-2.5 py-0.5 rounded-lg text-slate-400 hover:text-slate-200 transition';
-    if (tabMine) tabMine.className = 'px-2.5 py-0.5 rounded-lg bg-indigo-600 text-white transition';
+    if (tabAll) tabAll.className = 'px-2 py-0.5 rounded-lg text-slate-400 hover:text-slate-200 transition';
+    if (tabMine) tabMine.className = 'px-2 py-0.5 rounded-lg bg-indigo-600 text-white transition';
   }
 
   renderLogsUI();
@@ -610,7 +601,7 @@ function renderLogsUI(logsData = null) {
   }
 
   if (filtered.length === 0) {
-    gameLogs.innerHTML = `<span class="text-xs text-slate-500 italic p-2 block text-center">Chưa có hoạt động nào của bạn...</span>`;
+    gameLogs.innerHTML = `<span class="text-xs text-slate-500 italic p-2 block text-center">Chưa có hoạt động nào...</span>`;
     return;
   }
 
@@ -667,7 +658,7 @@ function initHost(roomCode, playerName) {
       logs: []
     };
 
-    addHostLog(`<span class="text-slate-400">Phòng <b class="text-amber-400 font-mono">[${roomCode}]</b> đã tạo bởi <b class="text-slate-200">${playerName}</b>.</span>`, { authorId: id });
+    addHostLog(`🏠 <b>Phòng [${roomCode}]</b> đã tạo bởi <span class="text-amber-400">${playerName}</span>`, { authorId: id });
 
     enterLobbyUI(roomCode, true);
     broadcastHostState();
@@ -690,7 +681,7 @@ function initHost(roomCode, playerName) {
 
   myPeer.on('error', (err) => {
     if (err.type === 'unavailable-id') {
-      showToast('Mã phòng này vừa được sử dụng, vui lòng bấm Tạo phòng lại!');
+      showToast('Mã phòng vừa được sử dụng, vui lòng thử lại!');
       clearSession();
     } else {
       showToast('Lỗi kết nối P2P: ' + err.type);
@@ -721,7 +712,7 @@ function handleClientAction(senderPeerId, data) {
       existingPlayer.id = senderPeerId;
       connectionsMap.delete(oldId);
 
-      addHostLog(`<span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 text-[10px] font-bold mr-1">TÁI KẾT NỐI</span> <b class="text-amber-400">${payload.name}</b> đã quay lại phòng.`, { authorId: senderPeerId });
+      addHostLog(`⚡ <b class="text-emerald-400">${payload.name}</b> đã quay lại phòng`, { authorId: senderPeerId });
       broadcastHostState();
       return;
     }
@@ -743,9 +734,9 @@ function handleClientAction(senderPeerId, data) {
 
     sound.pop();
     if (isSpectator) {
-      addHostLog(`<span class="px-1.5 py-0.5 rounded bg-sky-950 text-sky-300 text-[10px] font-bold mr-1">KHÁN GIẢ</span> <b class="text-sky-400">${payload.name}</b> đã vào theo dõi trận đấu.`, { authorId: senderPeerId });
+      addHostLog(`👀 <b class="text-sky-400">${payload.name}</b> vào xem trận đấu`, { authorId: senderPeerId });
     } else {
-      addHostLog(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400 font-bold mr-1">VÀO PHÒNG</span> <b class="text-amber-400">${payload.name}</b> đã tham gia.`, { authorId: senderPeerId });
+      addHostLog(`👋 <b class="text-amber-400">${payload.name}</b> đã tham gia phòng`, { authorId: senderPeerId });
     }
 
     broadcastHostState();
@@ -761,13 +752,13 @@ function handleClientAction(senderPeerId, data) {
 
     const targetConn = connectionsMap.get(targetId);
     if (targetConn && targetConn.open) {
-      targetConn.send({ type: 'KICKED', message: 'Bạn đã bị Chủ phòng mời ra khỏi phòng chơi!' });
+      targetConn.send({ type: 'KICKED', message: 'Bạn đã bị Chủ phòng mời ra khỏi phòng!' });
       targetConn.close();
     }
 
     connectionsMap.delete(targetId);
     serverState.players = serverState.players.filter(p => p.id !== targetId);
-    addHostLog(`<span class="px-1.5 py-0.5 rounded bg-rose-950 text-rose-400 text-[10px] font-extrabold mr-1">KICK</span> Chủ phòng đã mời <b class="text-rose-300">${targetPlayer.name}</b> ra khỏi phòng.`);
+    addHostLog(`🚪 Chủ phòng đã mời <b class="text-rose-400">${targetPlayer.name}</b> ra ngoài.`);
 
     if (serverState.state === 'PLAYING') {
       if (serverState.turnIndex >= serverState.players.length) {
@@ -788,7 +779,7 @@ function handleClientAction(senderPeerId, data) {
       if (activeMainPlayers.length < 2) {
         serverState.state = 'LOBBY';
         serverState.currentQuestion = null;
-        addHostLog(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold mr-1">HỆ THỐNG</span> Phòng thiếu người chơi, trở về trạng thái phòng chờ.`);
+        addHostLog(`⚠️ Phòng không đủ người chơi, trở về sảnh chờ.`);
       }
     }
 
@@ -814,7 +805,7 @@ function handleClientAction(senderPeerId, data) {
       answers: {}
     };
     resetTurnTimerDeadline();
-    addHostLog(`<span class="px-1.5 py-0.5 rounded bg-indigo-900/60 text-indigo-300 text-[10px] font-bold mr-1">HỎI</span> <b class="text-amber-400">${activePlayer.name}</b>: "${payload.question}"`, { authorId: activePlayer.id });
+    addHostLog(`❓ <b class="text-amber-400">${activePlayer.name}</b> hỏi: "${payload.question}"`, { authorId: activePlayer.id });
     broadcastHostState();
   }
 
@@ -833,7 +824,7 @@ function handleClientAction(senderPeerId, data) {
       answers: {}
     };
     resetTurnTimerDeadline();
-    addHostLog(`<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-extrabold mr-1">ĐOÁN TÊN</span> <b class="text-amber-400">${activePlayer.name}</b> đoán mình là: <b class="text-white">"${payload.guessedName}"</b>!`, { authorId: activePlayer.id });
+    addHostLog(`🎯 <b class="text-amber-400">${activePlayer.name}</b> đoán mình là: <b class="text-white">"${payload.guessedName}"</b>!`, { authorId: activePlayer.id });
     broadcastHostState();
   }
 
@@ -878,23 +869,23 @@ function checkPendingVoteCompletion() {
         activePlayer.finishRank = serverState.finishCounter;
 
         sound.victory(activePlayer.character);
-        addHostLog(`<span class="px-1.5 py-0.5 rounded bg-emerald-900/80 text-emerald-300 text-[10px] font-bold mr-1">CHÍNH XÁC</span> [Hạng ${activePlayer.finishRank}] <b class="text-amber-400">${activePlayer.name}</b> đã tìm ra nhân vật <b class="text-emerald-300">"${activePlayer.character}"</b>!`, { authorId: activePlayer.id });
+        addHostLog(`🎉 <b>CHÍNH XÁC:</b> <b class="text-amber-400">${activePlayer.name}</b> đã tìm ra <b class="text-emerald-300">"${activePlayer.character}"</b>!`, { authorId: activePlayer.id });
         
         const activeMainPlayers = serverState.players.filter(p => !p.isSpectator);
         if (activeMainPlayers.every(p => p.hasGuessedCorrectly)) {
           serverState.state = 'ENDED';
           serverState.turnDeadline = null;
-          addHostLog(`<span class="px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 text-[10px] font-extrabold mr-1">KẾT THÚC</span> Tất cả người chơi đã hoàn thành ván đấu.`);
+          addHostLog(`🏆 <b>Ván đấu hoàn tất!</b> Tất cả người chơi đã tìm ra nhân vật.`);
         }
       } else {
         sound.fail();
-        addHostLog(`<span class="px-1.5 py-0.5 rounded bg-rose-900/80 text-rose-300 text-[10px] font-bold mr-1">CHƯA ĐÚNG</span> Mọi người xác nhận câu đoán "${serverState.currentQuestion.text}" chưa chính xác.`, { authorId: activePlayer.id });
+        addHostLog(`❌ <b>CHƯA ĐÚNG:</b> Câu đoán "${serverState.currentQuestion.text}" không chính xác.`, { authorId: activePlayer.id });
       }
 
       serverState.lastTurnResult = {
         type: 'GUESS',
         askedBy: activePlayer.name,
-        question: `Đoán: "${serverState.currentQuestion.text}" (Nhân vật thật: ${activePlayer.character})`,
+        question: `Đoán: "${serverState.currentQuestion.text}" (Nhân vật: ${activePlayer.character})`,
         answers: { ...serverState.currentQuestion.answers }
       };
     } else {
@@ -906,7 +897,7 @@ function checkPendingVoteCompletion() {
         return `${voter ? voter.name : 'Người chơi'}: ${ansText}`;
       }).join(', ');
 
-      addHostLog(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-bold mr-1">KẾT QUẢ</span> <b class="text-amber-400">${activePlayer.name}</b> [${summary}]`, { authorId: activePlayer.id, involvedIds: answeredKeys });
+      addHostLog(`🗳️ <b>Kết quả [${activePlayer.name}]:</b> ${summary}`, { authorId: activePlayer.id, involvedIds: answeredKeys });
       
       serverState.lastTurnResult = {
         type: 'QUESTION',
@@ -935,7 +926,7 @@ function advanceHostTurn() {
   resetTurnTimerDeadline();
 
   if (nextPlayer && serverState.state === 'PLAYING' && !nextPlayer.isSpectator && !nextPlayer.hasGuessedCorrectly) {
-    addHostLog(`<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold mr-1">LƯỢT MỚI</span> Chuyển tới lượt của <b class="text-amber-400">${nextPlayer.name}</b>.`, { authorId: nextPlayer.id });
+    addHostLog(`👉 <b>Lượt tiếp theo:</b> <b class="text-amber-400">${nextPlayer.name}</b>`, { authorId: nextPlayer.id });
   }
 }
 
@@ -944,7 +935,7 @@ function handlePlayerDisconnect(peerId) {
 
   const leaving = serverState.players.find(p => p.id === peerId);
   if (leaving) {
-    addHostLog(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold mr-1">RỜI PHÒNG</span> <b class="text-slate-300">${leaving.name}</b> đã ngắt kết nối tạm thời.`);
+    addHostLog(`🔌 <b class="text-slate-400">${leaving.name}</b> mất kết nối tạm thời.`);
   }
 
   if (serverState.state === 'PLAYING') {
@@ -1050,7 +1041,7 @@ function initClient(roomCode, playerName, isReconnect = false) {
         spawnFloatingEmoji(data.payload.emoji, data.payload.senderName);
       } else if (data.type === 'KICKED') {
         clearSession();
-        alert(data.message || 'Bạn đã bị Chủ phòng mời ra khỏi phòng!');
+        alert(data.message || 'Bạn đã bị mời ra khỏi phòng!');
         location.reload();
       } else if (data.type === 'ERROR') {
         showToast(data.message);
@@ -1058,7 +1049,7 @@ function initClient(roomCode, playerName, isReconnect = false) {
     });
 
     hostConnection.on('close', () => {
-      showToast('Phòng đã bị đóng hoặc mất kết nối tới Chủ phòng!');
+      showToast('Mất kết nối tới Chủ phòng!');
       clearSession();
       setTimeout(() => location.reload(), 2500);
     });
@@ -1066,7 +1057,7 @@ function initClient(roomCode, playerName, isReconnect = false) {
 
   myPeer.on('error', (err) => {
     if (err.type === 'peer-unavailable') {
-      showToast('Không tìm thấy phòng với mã này! Hãy kiểm tra lại.');
+      showToast('Không tìm thấy phòng với mã này!');
       clearSession();
     } else {
       showToast('Lỗi kết nối P2P: ' + err.type);
@@ -1085,7 +1076,7 @@ function sendAction(type, payload = {}) {
 window.kickPlayer = function(targetId, targetName) {
   if (!isHost) return;
   sound.pop();
-  if (confirm(`Bạn có chắc chắn muốn mời [${targetName}] ra khỏi phòng không?`)) {
+  if (confirm(`Mời [${targetName}] ra khỏi phòng?`)) {
     sendAction('KICK_PLAYER', { targetId });
   }
 };
@@ -1110,21 +1101,21 @@ window.selectVoteOption = function(answer) {
     if (btn) btn.classList.add('ring-2', 'ring-emerald-400');
     if (pendingVoteLabel) {
       pendingVoteLabel.textContent = answer === 'YES' ? 'CÓ' : 'ĐÚNG RỒI';
-      pendingVoteLabel.className = 'font-black text-sm ml-1 text-emerald-400';
+      pendingVoteLabel.className = 'font-black text-xs sm:text-sm ml-1 text-emerald-400';
     }
   } else if (answer === 'NO' || answer === 'WRONG') {
     const btn = document.getElementById(answer === 'NO' ? 'btn-vote-no' : 'btn-guess-wrong');
     if (btn) btn.classList.add('ring-2', 'ring-rose-400');
     if (pendingVoteLabel) {
       pendingVoteLabel.textContent = answer === 'NO' ? 'KHÔNG' : 'SAI RỒI';
-      pendingVoteLabel.className = 'font-black text-sm ml-1 text-rose-400';
+      pendingVoteLabel.className = 'font-black text-xs sm:text-sm ml-1 text-rose-400';
     }
   } else {
     const btnVoteUnknown = document.getElementById('btn-vote-unknown');
     if (btnVoteUnknown) btnVoteUnknown.classList.add('ring-2', 'ring-amber-400');
     if (pendingVoteLabel) {
       pendingVoteLabel.textContent = 'KHÔNG RÕ';
-      pendingVoteLabel.className = 'font-black text-sm ml-1 text-slate-300';
+      pendingVoteLabel.className = 'font-black text-xs sm:text-sm ml-1 text-slate-300';
     }
   }
 
@@ -1154,7 +1145,6 @@ function enterLobbyUI(roomCode, amIHost) {
   const hostSettings = document.getElementById('host-settings');
   const btnStartGame = document.getElementById('btn-start-game');
   const waitHostMsg = document.getElementById('wait-host-msg');
-  const badgeRole = document.getElementById('badge-role');
 
   if (screenAuth) screenAuth.classList.add('hidden');
   if (screenLobby) screenLobby.classList.remove('hidden');
@@ -1170,18 +1160,10 @@ function enterLobbyUI(roomCode, amIHost) {
     if (hostSettings) hostSettings.classList.remove('hidden');
     if (btnStartGame) btnStartGame.classList.remove('hidden');
     if (waitHostMsg) waitHostMsg.classList.add('hidden');
-    if (badgeRole) {
-      badgeRole.textContent = '👑 Chủ phòng';
-      badgeRole.className = 'px-3.5 py-1 bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold rounded-full';
-    }
   } else {
     if (hostSettings) hostSettings.classList.add('hidden');
     if (btnStartGame) btnStartGame.classList.add('hidden');
     if (waitHostMsg) waitHostMsg.classList.remove('hidden');
-    if (badgeRole) {
-      badgeRole.textContent = 'Thành viên';
-      badgeRole.className = 'px-3.5 py-1 bg-slate-800 border border-slate-700 text-slate-300 text-xs font-bold rounded-full';
-    }
   }
 }
 
@@ -1193,7 +1175,7 @@ function updateCharacterVaultUI() {
 
   if (lobbyCharCount) lobbyCharCount.textContent = currentCharacterPool.length;
   if (modalTotalChars) modalTotalChars.textContent = currentCharacterPool.length;
-  if (badgeCurrentTheme) badgeCurrentTheme.textContent = `Chủ đề: ${currentThemeName}`;
+  if (badgeCurrentTheme) badgeCurrentTheme.textContent = currentThemeName;
 
   if (!modalCharTags) return;
 
@@ -1202,45 +1184,39 @@ function updateCharacterVaultUI() {
   );
 
   if (filtered.length === 0) {
-    modalCharTags.innerHTML = `<span class="text-xs text-slate-500 italic p-2">Không tìm thấy nhân vật nào phù hợp...</span>`;
+    modalCharTags.innerHTML = `<span class="text-xs text-slate-500 italic p-2">Không tìm thấy thẻ nào...</span>`;
     return;
   }
 
   modalCharTags.innerHTML = filtered.map((char) => {
     const realIndex = currentCharacterPool.indexOf(char);
     return `
-      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-700/80 text-xs font-semibold text-slate-200">
+      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-700/80 text-xs font-semibold text-slate-200">
         <span>${char}</span>
-        <button onclick="removeCharacter(${realIndex})" class="text-slate-500 hover:text-rose-400 font-bold ml-1 text-sm">✕</button>
+        <button onclick="removeCharacter(${realIndex})" class="text-slate-500 hover:text-rose-400 font-bold ml-1">✕</button>
       </span>
     `;
   }).join('');
 }
 
 function renderModalPresetButtons() {
-  const modalActiveThemePill = document.getElementById('modal-active-theme-pill');
   const modalPresetButtons = document.getElementById('modal-preset-buttons');
-  if (!modalActiveThemePill || !modalPresetButtons || !window.PRESET_THEMES) return;
+  if (!modalPresetButtons || !window.PRESET_THEMES) return;
 
-  modalActiveThemePill.textContent = `${selectedPresetKeys.length} gói đang chọn`;
   modalPresetButtons.innerHTML = Object.keys(window.PRESET_THEMES).map(key => {
     const preset = window.PRESET_THEMES[key];
     const isSelected = selectedPresetKeys.includes(key);
     return `
-      <button onclick="togglePresetTheme('${key}')" class="p-3 rounded-2xl border text-xs font-bold transition text-left flex flex-col justify-between relative group ${
+      <button onclick="togglePresetTheme('${key}')" class="p-2.5 rounded-xl border text-xs font-bold transition text-left flex flex-col justify-between relative ${
         isSelected 
-          ? 'bg-amber-500/20 border-amber-400 text-amber-300 ring-2 ring-amber-400/40 shadow-lg shadow-amber-500/10' 
+          ? 'bg-amber-500/20 border-amber-400 text-amber-300 ring-1 ring-amber-400/40 shadow-sm' 
           : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600 hover:bg-slate-850 hover:text-slate-200'
       }">
-        <div class="flex items-center justify-between w-full mb-1">
-          <span class="truncate font-black text-[13px]">${preset.name}</span>
-          <span class="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black border ${
-            isSelected 
-              ? 'bg-amber-400 text-slate-950 border-amber-300' 
-              : 'border-slate-700 text-transparent group-hover:border-slate-500'
-          }">✓</span>
+        <div class="flex items-center justify-between w-full mb-0.5">
+          <span class="truncate font-black text-xs">${preset.name}</span>
+          <span class="text-[10px] ${isSelected ? 'text-amber-300' : 'text-transparent'}">✓</span>
         </div>
-        <span class="text-[10px] ${isSelected ? 'text-amber-400/80 font-semibold' : 'text-slate-500'}">${preset.list.length} nhân vật</span>
+        <span class="text-[10px] ${isSelected ? 'text-amber-400/80 font-medium' : 'text-slate-500'}">${preset.list.length} tên</span>
       </button>
     `;
   }).join('');
@@ -1343,26 +1319,22 @@ function renderGameState(data) {
   const voteResults = document.getElementById('vote-results');
 
   if (data.currentThemeName && badgeCurrentTheme) {
-    badgeCurrentTheme.textContent = `Chủ đề: ${data.currentThemeName}`;
+    badgeCurrentTheme.textContent = data.currentThemeName;
   }
 
   if (badgeLobbyTimer) {
     if (data.timerEnabled) {
-      badgeLobbyTimer.textContent = `⏱️ ${data.timerDuration}s / lượt`;
-      badgeLobbyTimer.className = 'px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold rounded-full';
+      badgeLobbyTimer.textContent = `⏱️ ${data.timerDuration}s`;
     } else {
-      badgeLobbyTimer.textContent = '⏱️ Không giới hạn giờ';
-      badgeLobbyTimer.className = 'px-3 py-1.5 bg-slate-800 border border-slate-700 text-slate-400 text-xs font-bold rounded-full';
+      badgeLobbyTimer.textContent = '⏱️ Không giới hạn';
     }
   }
 
   if (badgeLobbyQuestions) {
     if (data.maxQuestionsEnabled) {
-      badgeLobbyQuestions.textContent = `🎯 Tối đa: ${data.maxQuestionsCount} câu`;
-      badgeLobbyQuestions.className = 'px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold rounded-full';
+      badgeLobbyQuestions.textContent = `🎯 ${data.maxQuestionsCount} câu`;
     } else {
-      badgeLobbyQuestions.textContent = '🎯 Không giới hạn câu';
-      badgeLobbyQuestions.className = 'px-3 py-1.5 bg-slate-800 border border-slate-700 text-slate-400 text-xs font-bold rounded-full';
+      badgeLobbyQuestions.textContent = '🎯 ∞ câu';
     }
   }
 
@@ -1382,16 +1354,16 @@ function renderGameState(data) {
     if (lobbyPlayerCount) lobbyPlayerCount.textContent = data.players.length;
     if (lobbyPlayerList) {
       lobbyPlayerList.innerHTML = data.players.map(p => `
-        <div class="bg-slate-950/80 border ${p.isYou ? 'border-indigo-500/80 ring-1 ring-indigo-500/30' : 'border-slate-800'} p-3 rounded-2xl flex items-center justify-between">
-          <div class="flex items-center gap-2 overflow-hidden">
-            <span class="font-extrabold text-sm text-slate-100 truncate">${p.name}</span>
-            ${p.isYou ? '<span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold text-[10px]">Bạn</span>' : ''}
-            ${p.id === data.hostId ? '<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-[10px]">Host</span>' : ''}
+        <div class="bg-slate-950/80 border ${p.isYou ? 'border-indigo-500/80 ring-1 ring-indigo-500/30' : 'border-slate-800'} p-2.5 rounded-2xl flex items-center justify-between">
+          <div class="flex items-center gap-1.5 overflow-hidden">
+            <span class="font-extrabold text-xs sm:text-sm text-slate-100 truncate">${p.name}</span>
+            ${p.isYou ? '<span class="px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 font-bold text-[9px]">Bạn</span>' : ''}
+            ${p.id === data.hostId ? '<span class="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold text-[9px]">Host</span>' : ''}
           </div>
 
           ${(data.isHost && p.id !== data.hostId) ? `
-            <button onclick="kickPlayer('${p.id}', '${p.name}')" class="px-2 py-1 bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30 rounded-lg text-xs font-bold transition flex-shrink-0">
-              ✕ Đá
+            <button onclick="kickPlayer('${p.id}', '${p.name}')" class="px-2 py-0.5 bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30 rounded-lg text-[10px] font-bold transition flex-shrink-0">
+              Đá
             </button>
           ` : ''}
         </div>
@@ -1446,8 +1418,8 @@ function renderGameState(data) {
 
     if (data.state === 'ENDED') {
       if (turnBanner) {
-        turnBanner.textContent = 'Trò chơi đã kết thúc';
-        turnBanner.className = 'text-xs sm:text-sm font-extrabold px-4 py-1.5 rounded-full bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20';
+        turnBanner.textContent = 'Hoàn tất ván đấu';
+        turnBanner.className = 'text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-500 text-slate-950 shadow-md';
       }
 
       const sortedPlayers = [...data.players].filter(p => !p.isSpectator).sort((a, b) => {
@@ -1459,27 +1431,26 @@ function renderGameState(data) {
 
       if (leaderboardPlayerList) {
         leaderboardPlayerList.innerHTML = sortedPlayers.map((p, idx) => {
-          let rankBadge = `<span class="w-6 text-center font-bold text-slate-500">#${idx + 1}</span>`;
-          if (p.finishRank === 1) rankBadge = `<span class="text-xl">🥇</span>`;
-          else if (p.finishRank === 2) rankBadge = `<span class="text-xl">🥈</span>`;
-          else if (p.finishRank === 3) rankBadge = `<span class="text-xl">🥉</span>`;
+          let rankBadge = `<span class="w-5 text-center font-bold text-slate-500 text-xs">#${idx + 1}</span>`;
+          if (p.finishRank === 1) rankBadge = `<span class="text-base">🥇</span>`;
+          else if (p.finishRank === 2) rankBadge = `<span class="text-base">🥈</span>`;
+          else if (p.finishRank === 3) rankBadge = `<span class="text-base">🥉</span>`;
 
           return `
-            <div class="p-3 rounded-2xl bg-slate-950/80 border ${p.isYou ? 'border-amber-500/50 bg-amber-500/5' : 'border-slate-800'} flex items-center justify-between">
-              <div class="flex items-center gap-2.5 overflow-hidden">
+            <div class="p-2.5 rounded-xl bg-slate-950/80 border ${p.isYou ? 'border-amber-500/50 bg-amber-500/5' : 'border-slate-800'} flex items-center justify-between">
+              <div class="flex items-center gap-2 overflow-hidden">
                 ${rankBadge}
                 <div class="overflow-hidden">
-                  <div class="flex items-center gap-1.5">
-                    <span class="font-black text-sm text-slate-100 truncate">${p.name}</span>
-                    ${p.isYou ? '<span class="px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 font-bold text-[9px]">Bạn</span>' : ''}
+                  <div class="flex items-center gap-1">
+                    <span class="font-black text-xs text-slate-100 truncate">${p.name}</span>
+                    ${p.isYou ? '<span class="px-1 py-0.2 rounded bg-indigo-500/20 text-indigo-300 font-bold text-[9px]">Bạn</span>' : ''}
                   </div>
-                  <span class="text-[11px] text-emerald-400 font-bold block truncate">🎯 Nhân vật: ${p.character}</span>
+                  <span class="text-[11px] text-emerald-400 font-bold block truncate">🎯 ${p.character}</span>
                 </div>
               </div>
 
               <div class="text-right flex-shrink-0">
                 <span class="text-xs font-black text-slate-200">${p.questionsAskedCount || 0} câu</span>
-                <span class="block text-[10px] text-slate-500 font-medium">${p.hasGuessedCorrectly ? 'Đã hoàn thành' : 'Chưa đoán ra'}</span>
               </div>
             </div>
           `;
@@ -1501,13 +1472,13 @@ function renderGameState(data) {
       if (modalLeaderboard) modalLeaderboard.classList.add('hidden');
       if (turnBanner) {
         if (amISpectator) {
-          turnBanner.textContent = `👀 Bạn đang xem (${activePlayer?.name || '...'})`;
-          turnBanner.className = 'text-xs sm:text-sm font-bold px-4 py-1.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/40';
+          turnBanner.textContent = `👀 Đang xem: ${activePlayer?.name || '...'}`;
+          turnBanner.className = 'text-xs font-bold px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/40';
         } else {
-          turnBanner.textContent = isMyTurn ? 'ĐANG LÀ LƯỢT CỦA BẠN' : `Lượt của: ${activePlayer?.name || '...'}`;
-          turnBanner.className = `text-xs sm:text-sm font-bold px-4 py-1.5 rounded-full transition-all ${
+          turnBanner.textContent = isMyTurn ? 'LƯỢT CỦA BẠN' : `Lượt: ${activePlayer?.name || '...'}`;
+          turnBanner.className = `text-xs font-bold px-3 py-1 rounded-full transition-all ${
             isMyTurn 
-              ? 'bg-amber-400 text-slate-950 font-black shadow-lg shadow-amber-400/30 animate-bounce' 
+              ? 'bg-amber-400 text-slate-950 font-black shadow-md shadow-amber-400/30' 
               : 'bg-slate-800 text-slate-300 border border-slate-700'
           }`;
         }
@@ -1527,35 +1498,35 @@ function renderGameState(data) {
         }
 
         return `
-          <div class="relative border-2 ${cardBorderClass} backdrop-blur-md rounded-2xl p-3.5 flex flex-col items-center text-center transition-all duration-300">
+          <div class="relative border-2 ${cardBorderClass} backdrop-blur-md rounded-2xl p-2.5 sm:p-3 flex flex-col items-center text-center transition-all duration-300">
             
             ${(data.isHost && p.id !== data.hostId) ? `
-              <button onclick="kickPlayer('${p.id}', '${p.name}')" title="Mời người này ra" class="absolute top-2 right-2 w-5 h-5 rounded-full bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white text-[10px] font-bold flex items-center justify-center transition border border-slate-700">
+              <button onclick="kickPlayer('${p.id}', '${p.name}')" title="Mời ra" class="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white text-[9px] font-bold flex items-center justify-center transition border border-slate-700">
                 ✕
               </button>
             ` : ''}
 
-            <div class="w-full flex items-center justify-center gap-1.5 mb-2.5 pb-2 border-b border-slate-800 pr-4 pl-1">
-              <span class="text-sm font-black text-slate-100 truncate tracking-wide">
+            <div class="w-full flex items-center justify-center gap-1 mb-1.5 pb-1.5 border-b border-slate-800 pr-3 pl-1">
+              <span class="text-xs sm:text-sm font-black text-slate-100 truncate">
                 ${p.name}
               </span>
-              ${p.isSpectator ? '<span class="px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[9px] font-extrabold">Khán giả</span>' : ''}
-              ${isSelf ? '<span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-extrabold">Bạn</span>' : ''}
-              ${p.id === data.hostId ? '<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-extrabold">Host</span>' : ''}
+              ${p.isSpectator ? '<span class="px-1 rounded bg-sky-500/20 text-sky-300 text-[8px] font-bold">Xem</span>' : ''}
+              ${isSelf ? '<span class="px-1 rounded bg-indigo-500/20 text-indigo-300 text-[8px] font-bold">Bạn</span>' : ''}
+              ${p.id === data.hostId ? '<span class="px-1 rounded bg-amber-500/20 text-amber-300 text-[8px] font-bold">Host</span>' : ''}
             </div>
 
-            <div class="w-full py-3 px-2 rounded-xl bg-slate-950 border border-slate-800/90 flex items-center justify-center min-h-[52px] shadow-inner">
-              <span class="font-extrabold text-sm sm:text-base ${p.character === '???' ? 'text-amber-400 font-mono tracking-widest text-lg' : (p.isSpectator ? 'text-slate-400 text-xs' : 'text-emerald-400')}">
+            <div class="w-full py-2 px-1 rounded-xl bg-slate-950 border border-slate-800/90 flex items-center justify-center min-h-[46px] shadow-inner">
+              <span class="font-extrabold text-xs sm:text-sm ${p.character === '???' ? 'text-amber-400 font-mono tracking-widest text-base' : (p.isSpectator ? 'text-slate-500 text-xs' : 'text-emerald-400')}">
                 ${p.character}
               </span>
             </div>
 
-            <div class="mt-2 text-[10px] font-semibold text-slate-400 flex items-center gap-1">
+            <div class="mt-1.5 text-[9px] sm:text-[10px] font-semibold text-slate-400 flex items-center gap-1">
               ${p.isSpectator 
-                ? '<span class="text-sky-400 font-bold">👀 Đang xem</span>'
+                ? '<span class="text-sky-400">Khán giả</span>'
                 : (p.hasGuessedCorrectly 
-                  ? `<span class="text-emerald-400 font-bold">✓ Đã đoán đúng (#${p.finishRank})</span>` 
-                  : (p.character === '???' ? `<span class="text-slate-500">${data.maxQuestionsEnabled ? `Đã hỏi ${p.questionsAskedCount || 0}/${data.maxQuestionsCount}` : 'Mọi người thấy bạn'}</span>` : '<span class="text-slate-400">Nhân vật</span>'))
+                  ? `<span class="text-emerald-400 font-bold">Đoán đúng (#${p.finishRank})</span>` 
+                  : (p.character === '???' ? `<span class="text-slate-500">${data.maxQuestionsEnabled ? `${p.questionsAskedCount || 0}/${data.maxQuestionsCount} câu` : 'Mọi người thấy'}</span>` : '<span class="text-slate-400">Nhân vật</span>'))
               }
             </div>
           </div>
@@ -1584,7 +1555,7 @@ function renderGameState(data) {
           } else if (ans === 'UNKNOWN') {
             label = 'KHÔNG RÕ';
           }
-          return `<span class="px-2.5 py-1 rounded-xl border ${badgeClass} font-semibold"><b class="text-amber-300">${voter?.name || '...'}:</b> ${label}</span>`;
+          return `<span class="px-2 py-0.5 rounded-lg border ${badgeClass} text-[11px] font-semibold"><b class="text-amber-300">${voter?.name || '...'}:</b> ${label}</span>`;
         }).join('');
       }
     } else if (panelLastResult) {
@@ -1599,24 +1570,24 @@ function renderGameState(data) {
         if (isLimitReached) {
           if (inputQuestion) {
             inputQuestion.disabled = true;
-            inputQuestion.placeholder = 'Đã hết lượt hỏi! Hãy chốt đoán tên hoặc bỏ lượt.';
+            inputQuestion.placeholder = 'Đã hết câu hỏi! Hãy chốt đoán tên hoặc bỏ lượt.';
           }
           if (btnSendQuestion) btnSendQuestion.disabled = true;
           if (btnOpenQuestionAssistant) btnOpenQuestionAssistant.disabled = true;
           if (turnLimitWarning) {
-            turnLimitWarning.textContent = '⚠️ Hết câu hỏi: Chỉ được đoán tên';
-            turnLimitWarning.className = 'text-xs text-rose-400 font-extrabold animate-pulse';
+            turnLimitWarning.textContent = 'Hết lượt hỏi: Hãy chốt đoán tên';
+            turnLimitWarning.className = 'text-[11px] text-rose-400 font-extrabold animate-pulse';
           }
         } else {
           if (inputQuestion) {
             inputQuestion.disabled = false;
-            inputQuestion.placeholder = 'Ví dụ: Tôi có phải là nhân vật hoạt hình không?...';
+            inputQuestion.placeholder = 'Hỏi một câu Có/Không (Ví dụ: Tôi có phải là diễn viên không?)...';
           }
           if (btnSendQuestion) btnSendQuestion.disabled = false;
           if (btnOpenQuestionAssistant) btnOpenQuestionAssistant.disabled = false;
           if (turnLimitWarning) {
-            turnLimitWarning.textContent = 'Hỏi Có/Không hoặc chốt đoán tên';
-            turnLimitWarning.className = 'text-xs text-slate-400 font-medium';
+            turnLimitWarning.textContent = 'Hỏi Có/Không hoặc đoán tên';
+            turnLimitWarning.className = 'text-[11px] text-slate-400 font-medium';
           }
         }
 
@@ -1637,11 +1608,11 @@ function renderGameState(data) {
 
       if (data.currentQuestion.type === 'GUESS') {
         if (votePanelTitle) {
-          votePanelTitle.textContent = 'Bình chọn câu đoán nhân vật';
+          votePanelTitle.textContent = 'Biểu quyết câu đoán tên';
           votePanelTitle.className = 'text-xs font-black text-amber-400 uppercase tracking-wider animate-pulse';
         }
         if (currentQuestionText) {
-          currentQuestionText.innerHTML = `<span class="text-slate-400 text-xs block mb-1">Người chơi <b class="text-amber-400 font-bold">${data.currentQuestion.askedBy}</b> đoán mình là:</span> <span class="text-lg font-black text-white">"${data.currentQuestion.text}"</span>`;
+          currentQuestionText.innerHTML = `<span class="text-slate-400 text-xs block mb-0.5"><b class="text-amber-400 font-bold">${data.currentQuestion.askedBy}</b> đoán mình là:</span> <span class="text-base sm:text-lg font-black text-white">"${data.currentQuestion.text}"</span>`;
         }
         
         if (!isMyTurn) {
@@ -1684,7 +1655,7 @@ function renderGameState(data) {
       const answerKeys = Object.keys(answers);
       const totalVoters = data.players.filter(p => !p.isSpectator).length - 1;
 
-      if (voteCounterBadge) voteCounterBadge.textContent = `${answerKeys.length}/${Math.max(1, totalVoters)} người đã trả lời`;
+      if (voteCounterBadge) voteCounterBadge.textContent = `${answerKeys.length}/${Math.max(1, totalVoters)} đã trả lời`;
 
       if (voteResults) {
         if (answerKeys.length > 0) {
@@ -1702,10 +1673,10 @@ function renderGameState(data) {
             } else if (ans === 'UNKNOWN') {
               label = 'KHÔNG RÕ';
             }
-            return `<span class="px-2.5 py-1 rounded-xl border ${badgeClass} font-semibold"><b class="text-amber-300">${voter?.name || '...'}:</b> ${label}</span>`;
+            return `<span class="px-2 py-0.5 rounded-lg border ${badgeClass} text-[11px] font-semibold"><b class="text-amber-300">${voter?.name || '...'}:</b> ${label}</span>`;
           }).join('');
         } else {
-          voteResults.innerHTML = '<span class="text-slate-500 italic">Đang chờ mọi người nhấn biểu quyết...</span>';
+          voteResults.innerHTML = '<span class="text-slate-500 italic text-[11px]">Đang chờ mọi người nhấn biểu quyết...</span>';
         }
       }
     } else {
@@ -1742,12 +1713,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (roomParam && inputRoomCode) {
     inputRoomCode.value = roomParam.toUpperCase();
     if (inputName) inputName.focus();
-    showToast(`Đã nhận diện mã phòng [${roomParam.toUpperCase()}] từ liên kết!`);
+    showToast(`Đã nhận diện phòng [${roomParam.toUpperCase()}]`);
   }
 
   const existingSession = getSession();
   if (existingSession && existingSession.roomCode && existingSession.playerName) {
-    showToast(`Đang kết nối lại phòng [${existingSession.roomCode}]...`);
+    showToast(`Đang kết nối lại [${existingSession.roomCode}]...`);
     if (existingSession.isHost) {
       initHost(existingSession.roomCode, existingSession.playerName);
     } else {
@@ -1866,7 +1837,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnClearNotepad) {
     btnClearNotepad.addEventListener('click', () => {
       sound.pop();
-      if (confirm('Xóa sạch nội dung trong sổ ghi chú này?')) {
+      if (confirm('Xóa sạch sổ ghi chú?')) {
         textareaNotepad.value = '';
         localStorage.removeItem(STORAGE_KEY_NOTEPAD);
         updateNotepadUI('');
@@ -1947,7 +1918,7 @@ document.addEventListener('DOMContentLoaded', () => {
       selectedPresetKeys = Object.keys(window.PRESET_THEMES);
       rebuildCharacterPool();
       renderModalPresetButtons();
-      showToast(`Đã chọn tất cả ${selectedPresetKeys.length} gói chủ đề!`);
+      showToast(`Đã chọn tất cả ${selectedPresetKeys.length} gói!`);
     });
   }
 
@@ -1956,10 +1927,10 @@ document.addEventListener('DOMContentLoaded', () => {
       sound.pop();
       if (customCharacters.length === 0) {
         selectedPresetKeys = ['SHOWBIZ'];
-        showToast('Giữ lại gói Showbiz vì danh sách tự chọn đang trống!');
+        showToast('Giữ lại gói Showbiz mặc định');
       } else {
         selectedPresetKeys = [];
-        showToast('Đã bỏ chọn tất cả gói mẫu (Đang dùng nhân vật tự chọn)');
+        showToast('Đang dùng danh sách tự chọn');
       }
       rebuildCharacterPool();
       renderModalPresetButtons();
@@ -1993,9 +1964,9 @@ document.addEventListener('DOMContentLoaded', () => {
       sound.pop();
       rebuildCharacterPool();
       renderModalPresetButtons();
-      showToast(`Đã thêm ${addedCount} nhân vật vào kho!`);
+      showToast(`Đã thêm ${addedCount} tên vào kho!`);
     } else {
-      showToast('Nhân vật này đã tồn tại trong kho.');
+      showToast('Nhân vật này đã có sẵn.');
     }
   }
 
@@ -2035,9 +2006,9 @@ document.addEventListener('DOMContentLoaded', () => {
         rebuildCharacterPool();
         renderModalPresetButtons();
         inputSheetUrl.value = '';
-        showToast(`Đã đồng bộ thành công ${addedCount} nhân vật từ Google Sheet!`);
+        showToast(`Đồng bộ thành công ${addedCount} tên!`);
       } catch (err) {
-        showToast('Lỗi: Hãy đảm bảo Google Sheet đã bật "Bất kỳ ai có liên kết đều xem được"!');
+        showToast('Lỗi: Hãy đảm bảo Google Sheet đã bật xem công khai!');
       }
     });
   }
@@ -2071,7 +2042,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnSaveCharModal.addEventListener('click', () => {
       sound.pop();
       modalCharManager.classList.add('hidden');
-      showToast('Đã lưu thiết lập chủ đề thành công!');
+      showToast('Đã lưu thiết lập kho!');
     });
   }
 
@@ -2080,14 +2051,14 @@ document.addEventListener('DOMContentLoaded', () => {
       sound.pop();
       const listStr = currentCharacterPool.join(', ');
       navigator.clipboard.writeText(listStr).then(() => {
-        showToast('Đã sao chép danh sách nhân vật vào Clipboard!');
+        showToast('Đã sao chép danh sách vào Clipboard!');
       });
     });
   }
 
   if (btnResetDefaultChars) {
     btnResetDefaultChars.addEventListener('click', () => {
-      if (confirm('Khôi phục lại về gói Showbiz mặc định ban đầu?')) {
+      if (confirm('Khôi phục lại gói Showbiz gốc?')) {
         sound.pop();
         selectedPresetKeys = ['SHOWBIZ'];
         customCharacters = [];
@@ -2095,7 +2066,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (inputSearchChar) inputSearchChar.value = '';
         rebuildCharacterPool();
         renderModalPresetButtons();
-        showToast('Đã khôi phục gói Showbiz ban đầu.');
+        showToast('Đã khôi phục mặc định.');
       }
     });
   }
@@ -2149,11 +2120,11 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       if (serverState.players.length < 2) {
-        return showToast('Cần ít nhất 2 người chơi để bắt đầu!');
+        return showToast('Cần ít nhất 2 người để bắt đầu!');
       }
 
       if (currentCharacterPool.length < serverState.players.length) {
-        return showToast(`Kho nhân vật hiện có (${currentCharacterPool.length}) ít hơn số người chơi (${serverState.players.length}). Vui lòng chọn thêm gói chủ đề!`);
+        return showToast(`Kho nhân vật hiện có (${currentCharacterPool.length}) ít hơn số người chơi (${serverState.players.length}). Vui lòng chọn thêm gói!`);
       }
 
       sound.success();
@@ -2173,7 +2144,7 @@ document.addEventListener('DOMContentLoaded', () => {
       resetTurnTimerDeadline();
       startHostAuthoritativeTimer();
 
-      addHostLog(`<span class="px-1.5 py-0.5 rounded bg-emerald-900/80 text-emerald-300 text-[10px] font-bold mr-1">BẮT ĐẦU</span> Trận đấu bắt đầu! Lượt đầu: <b class="text-amber-400">${serverState.players[0].name}</b>.`);
+      addHostLog(`🚀 <b>Trận đấu bắt đầu!</b> Lượt đầu: <b class="text-amber-400">${serverState.players[0].name}</b>`);
 
       broadcastHostState();
     });
@@ -2194,7 +2165,7 @@ document.addEventListener('DOMContentLoaded', () => {
       p.finishRank = null;
       p.isSpectator = false;
     });
-    addHostLog(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-bold mr-1">VÁN MỚI</span> Phòng đang ở trạng thái chuẩn bị ván mới.`);
+    addHostLog(`🔄 <b>Chuẩn bị ván mới</b>`);
     const modalLeaderboard = document.getElementById('modal-leaderboard');
     if (modalLeaderboard) modalLeaderboard.classList.add('hidden');
     broadcastHostState();
@@ -2220,7 +2191,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnMakeGuess && inputGuessName) {
     btnMakeGuess.addEventListener('click', () => {
       const guess = inputGuessName.value.trim();
-      if (!guess) return showToast('Vui lòng nhập tên nhân vật bạn muốn đoán!');
+      if (!guess) return showToast('Vui lòng nhập tên muốn đoán!');
       sound.pop();
       sendAction('MAKE_GUESS', { guessedName: guess });
       inputGuessName.value = '';
