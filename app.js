@@ -1,20 +1,29 @@
 // ==========================================
-// CẤU HÌNH MẠNG P2P TOÀN CẦU (GOOGLE STUN CHUẨN)
+// CẤU HÌNH TRUYỀN THÔNG THỜI GIAN THỰC (REALTIME ENGINE)
 // ==========================================
-const PEER_CONFIG = {
-  debug: 1,
-  config: {
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'stun:stun2.l.google.com:19302' },
-      { urls: 'stun:stun3.l.google.com:19302' },
-      { urls: 'stun:stun4.l.google.com:19302' }
-    ]
-  }
-};
+const REALTIME_ENDPOINT = 'https://ntfy.sh';
+const REALTIME_WS_ENDPOINT = 'wss://ntfy.sh';
+const TOPIC_PREFIX = 'whoami_v7_room_';
 
-const ROOM_ID_PREFIX = 'whoami-v6-';
+let roomWs = null;
+let heartbeatTimer = null;
+
+function getRoomTopic(code) {
+  return `${TOPIC_PREFIX}${code.trim().toLowerCase()}`;
+}
+
+async function publishRealtimeMessage(roomCode, msgObj) {
+  try {
+    const topic = getRoomTopic(roomCode);
+    await fetch(`${REALTIME_ENDPOINT}/${topic}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(msgObj)
+    });
+  } catch (e) {
+    console.error('Publish Error:', e);
+  }
+}
 
 // ==========================================
 // HỆ THỐNG ÂM THANH & RUNG PHẢN HỒI (SOUND & HAPTIC)
@@ -159,13 +168,13 @@ function getThemeKeyByCharacter(characterName) {
 }
 
 // ==========================================
-// KHỞI TẠO BIẾN TRẠNG THÁI & STORAGE
+// KHỞI TẠO BIẾN TRẠNG THÁI & LOCAL STORAGE
 // ==========================================
 const STORAGE_KEY_PRESETS = 'whoami_selected_preset_keys_v4';
 const STORAGE_KEY_CUSTOM = 'whoami_custom_character_list_v4';
 const STORAGE_KEY_SHEET_THEMES = 'whoami_sheet_themes_v4';
 const STORAGE_KEY_NOTEPAD = 'whoami_private_notepad_content';
-const SESSION_STORAGE_KEY = 'whoami_active_p2p_session';
+const SESSION_STORAGE_KEY = 'whoami_active_session_v7';
 
 let selectedPresetKeys = ['SHOWBIZ'];
 let customCharacters = [];
@@ -180,7 +189,6 @@ let hostTimerDuration = 45;
 let hostMaxQuestionsEnabled = false;
 let hostMaxQuestionsCount = 15;
 
-let myPeer = null;
 let myId = null;
 let myName = '';
 let isHost = false;
@@ -188,11 +196,8 @@ let currentRoomCode = '';
 let hasVotedCurrentQuestion = false;
 let selectedVoteOption = null;
 
-const connectionsMap = new Map();
 let serverState = null;
-let hostConnection = null;
-let connectionTimeoutTimer = null;
-let heartbeatInterval = null;
+let clientJoinTimeoutTimer = null;
 
 let localTimerInterval = null;
 let hostAuthoritativeTimer = null;
@@ -224,7 +229,7 @@ function clearSession() {
 }
 
 // ==========================================
-// QUẢN LÝ KHO NHÂN VẬT & PRESET / GOOGLE SHEET THEMES
+// QUẢN LÝ KHO NHÂN VẬT & GOOGLE SHEET
 // ==========================================
 function loadCharacterPool() {
   const savedPresets = localStorage.getItem(STORAGE_KEY_PRESETS);
@@ -363,9 +368,6 @@ window.removeCharacter = function(index) {
   saveCharacterPool();
 };
 
-// ==========================================
-// PARSER CSV ĐA CỘT THÔNG MINH CHO GOOGLE SHEET
-// ==========================================
 function parseCSV(text) {
   const lines = [];
   let row = [];
@@ -408,7 +410,7 @@ function parseCSV(text) {
 }
 
 // ==========================================
-// TIỆN ÍCH CHUNG & TRẠNG THÁI LOADING
+// TIỆN ÍCH CHUNG & TRẠNG THÁI UI
 // ==========================================
 function showToast(msg) {
   const toast = document.getElementById('toast');
@@ -434,7 +436,7 @@ function setAuthButtonsLoading(loading, buttonType = 'JOIN', loadingText = '') {
   if (loading) {
     if (buttonType === 'JOIN' && btnJoin) {
       btnJoin.disabled = true;
-      btnJoin.innerHTML = `<span class="inline-block animate-spin mr-1">🔄</span> ${loadingText || 'Đang kết nối...'}`;
+      btnJoin.innerHTML = `<span class="inline-block animate-spin mr-1">🔄</span> ${loadingText || 'Đang vào...'}`;
     }
     if (buttonType === 'CREATE' && btnCreate) {
       btnCreate.disabled = true;
@@ -486,10 +488,10 @@ function shuffle(array) {
 
 window.leaveRoom = function() {
   if (confirm('Bạn muốn rời khỏi phòng này?')) {
-    if (heartbeatInterval) clearInterval(heartbeatInterval);
-    if (connectionTimeoutTimer) clearTimeout(connectionTimeoutTimer);
-    if (myPeer) {
-      try { myPeer.destroy(); } catch (e) {}
+    if (heartbeatTimer) clearInterval(heartbeatTimer);
+    if (clientJoinTimeoutTimer) clearTimeout(clientJoinTimeoutTimer);
+    if (roomWs) {
+      try { roomWs.close(); } catch (e) {}
     }
     clearSession();
     location.reload();
@@ -766,28 +768,28 @@ function renderLogsUI(logsData = null) {
 // LOGIC CHỦ PHÒNG (HOST ENGINE)
 // ==========================================
 function initHost(roomCode, playerName) {
-  if (myPeer) {
-    try { myPeer.destroy(); } catch (e) {}
+  if (roomWs) {
+    try { roomWs.close(); } catch (e) {}
   }
-  if (heartbeatInterval) clearInterval(heartbeatInterval);
+  if (heartbeatTimer) clearInterval(heartbeatTimer);
 
   const cleanRoomCode = roomCode.trim().toUpperCase();
-  const hostPeerId = `${ROOM_ID_PREFIX}${cleanRoomCode.toLowerCase()}`;
-  
+  myId = 'host_' + Math.random().toString(36).substring(2, 9);
+  isHost = true;
+  currentRoomCode = cleanRoomCode;
+
   setAuthButtonsLoading(true, 'CREATE', 'Đang tạo phòng...');
-  myPeer = new Peer(hostPeerId, PEER_CONFIG);
 
-  myPeer.on('open', (id) => {
-    myId = id;
-    isHost = true;
-    currentRoomCode = cleanRoomCode;
+  const topic = getRoomTopic(cleanRoomCode);
+  roomWs = new WebSocket(`${REALTIME_WS_ENDPOINT}/${topic}/ws`);
 
+  roomWs.onopen = () => {
     setAuthButtonsLoading(false);
-    saveSession({ roomCode: cleanRoomCode, playerName, isHost: true });
+    saveSession({ roomCode: cleanRoomCode, playerName, isHost: true, myId });
 
     serverState = {
       code: cleanRoomCode,
-      hostId: id,
+      hostId: myId,
       state: 'LOBBY',
       turnIndex: 0,
       currentThemeName: currentThemeName,
@@ -801,7 +803,7 @@ function initHost(roomCode, playerName) {
       finishCounter: 0,
       players: [
         {
-          id: id,
+          id: myId,
           name: playerName,
           character: null,
           hasGuessedCorrectly: false,
@@ -813,51 +815,33 @@ function initHost(roomCode, playerName) {
       logs: []
     };
 
-    addHostLog(`🏠 <b>Phòng [${cleanRoomCode}]</b> đã tạo bởi <span class="text-amber-400">${playerName}</span>`, { authorId: id });
+    addHostLog(`🏠 <b>Phòng [${cleanRoomCode}]</b> đã tạo bởi <span class="text-amber-400">${playerName}</span>`, { authorId: myId });
 
     enterLobbyUI(cleanRoomCode, true);
     broadcastHostState();
-  });
 
-  myPeer.on('connection', (conn) => {
-    conn.on('open', () => {
-      connectionsMap.set(conn.peer, conn);
-      conn.send({ type: 'HANDSHAKE_ACK' });
-    });
-
-    conn.on('data', (data) => {
-      if (data && data.type === 'PING') {
-        conn.send({ type: 'PONG' });
-        return;
+    heartbeatTimer = setInterval(() => {
+      if (roomWs && roomWs.readyState === WebSocket.OPEN) {
+        roomWs.send(JSON.stringify({ type: 'PING' }));
       }
-      handleClientAction(conn.peer, data);
-    });
+    }, 15000);
+  };
 
-    conn.on('close', () => {
-      connectionsMap.delete(conn.peer);
-      handlePlayerDisconnect(conn.peer);
-    });
+  roomWs.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      if (data.event === 'message') {
+        const msg = JSON.parse(data.message);
+        if (msg.senderId === myId) return; // Bỏ qua tin nhắn do chính mình gửi
+        handleClientAction(msg.senderId, msg);
+      }
+    } catch (e) {}
+  };
 
-    conn.on('error', (err) => {
-      console.warn('Host Connection Error:', err);
-    });
-  });
-
-  myPeer.on('disconnected', () => {
-    if (myPeer && !myPeer.destroyed) {
-      myPeer.reconnect();
-    }
-  });
-
-  myPeer.on('error', (err) => {
+  roomWs.onerror = () => {
     setAuthButtonsLoading(false);
-    if (err.type === 'unavailable-id') {
-      showToast('Mã phòng này đang bị kẹt trên máy chủ, hãy bấm "Tạo phòng mới" lại!');
-      clearSession();
-    } else {
-      showToast('Lỗi máy chủ P2P: ' + err.type);
-    }
-  });
+    showToast('Lỗi kết nối máy chủ thời gian thực!');
+  };
 }
 
 function handleClientAction(senderPeerId, data) {
@@ -865,24 +849,14 @@ function handleClientAction(senderPeerId, data) {
   const { type, payload } = data;
 
   if (type === 'SEND_REACTION') {
-    connectionsMap.forEach((conn) => {
-      if (conn && conn.open && conn.peer !== senderPeerId) {
-        conn.send({ type: 'BROADCAST_REACTION', payload });
-      }
-    });
-    if (serverState.hostId !== senderPeerId) {
-      spawnFloatingEmoji(payload.emoji, payload.senderName);
-    }
+    spawnFloatingEmoji(payload.emoji, payload.senderName);
     return;
   }
 
   if (type === 'RECONNECT_REQUEST') {
     const existingPlayer = serverState.players.find(p => p.name === payload.name);
     if (existingPlayer) {
-      const oldId = existingPlayer.id;
       existingPlayer.id = senderPeerId;
-      connectionsMap.delete(oldId);
-
       addHostLog(`⚡ <b class="text-emerald-400">${payload.name}</b> đã quay lại phòng`, { authorId: senderPeerId });
       broadcastHostState();
       return;
@@ -924,13 +898,13 @@ function handleClientAction(senderPeerId, data) {
     const targetPlayer = serverState.players.find(p => p.id === targetId);
     if (!targetPlayer) return;
 
-    const targetConn = connectionsMap.get(targetId);
-    if (targetConn && targetConn.open) {
-      targetConn.send({ type: 'KICKED', message: 'Bạn đã bị Chủ phòng mời ra khỏi phòng!' });
-      targetConn.close();
-    }
+    publishRealtimeMessage(currentRoomCode, {
+      senderId: myId,
+      targetId: targetId,
+      type: 'KICKED',
+      message: 'Bạn đã bị Chủ phòng mời ra khỏi phòng!'
+    });
 
-    connectionsMap.delete(targetId);
     serverState.players = serverState.players.filter(p => p.id !== targetId);
     addHostLog(`🚪 Chủ phòng đã mời <b class="text-rose-400">${targetPlayer.name}</b> ra ngoài.`);
 
@@ -1104,190 +1078,120 @@ function advanceHostTurn() {
   }
 }
 
-function handlePlayerDisconnect(peerId) {
-  if (!serverState) return;
-
-  const leaving = serverState.players.find(p => p.id === peerId);
-  if (leaving) {
-    addHostLog(`🔌 <b class="text-slate-400">${leaving.name}</b> mất kết nối.`);
-  }
-
-  if (serverState.state === 'PLAYING') {
-    if (serverState.currentQuestion) {
-      if (serverState.currentQuestion.askedById === peerId) {
-        serverState.currentQuestion = null;
-        advanceHostTurn();
-      } else {
-        delete serverState.currentQuestion.answers[peerId];
-        checkPendingVoteCompletion();
-      }
-    }
-  }
-
-  broadcastHostState();
-}
-
 function broadcastHostState() {
   if (!serverState) return;
 
-  serverState.players.forEach(p => {
-    const personalizedState = {
-      roomCode: serverState.code,
-      hostId: serverState.hostId,
-      isHost: serverState.hostId === p.id,
-      state: serverState.state,
-      currentThemeName: serverState.currentThemeName || currentThemeName,
-      timerEnabled: serverState.timerEnabled,
-      timerDuration: serverState.timerDuration,
-      maxQuestionsEnabled: serverState.maxQuestionsEnabled,
-      maxQuestionsCount: serverState.maxQuestionsCount,
-      turnDeadline: serverState.turnDeadline,
-      turnIndex: serverState.turnIndex,
-      activePlayerId: serverState.players[serverState.turnIndex]?.id,
-      currentQuestion: serverState.currentQuestion ? {
-        ...serverState.currentQuestion,
-        actualCharacter: (serverState.currentQuestion.askedById === p.id && !p.hasGuessedCorrectly)
-          ? '???'
-          : serverState.currentQuestion.actualCharacter
-      } : null,
-      lastTurnResult: serverState.lastTurnResult,
-      logs: serverState.logs,
-      players: serverState.players.map(other => ({
-        id: other.id,
-        name: other.name,
-        character: (other.id === p.id && !other.hasGuessedCorrectly && serverState.state !== 'ENDED' && !other.isSpectator)
-          ? '???'
-          : other.character,
-        isYou: other.id === p.id,
-        hasGuessedCorrectly: other.hasGuessedCorrectly,
-        questionsAskedCount: other.questionsAskedCount || 0,
-        finishRank: other.finishRank,
-        isSpectator: other.isSpectator
-      }))
-    };
+  renderGameState({
+    ...serverState,
+    roomCode: serverState.code,
+    isHost: true,
+    activePlayerId: serverState.players[serverState.turnIndex]?.id,
+    players: serverState.players.map(p => ({
+      ...p,
+      isYou: p.id === myId,
+      character: (p.id === myId && !p.hasGuessedCorrectly && serverState.state !== 'ENDED' && !p.isSpectator) ? '???' : p.character
+    }))
+  });
 
-    if (p.id === myId) {
-      renderGameState(personalizedState);
-    } else {
-      const clientConn = connectionsMap.get(p.id);
-      if (clientConn && clientConn.open) {
-        clientConn.send({ type: 'STATE_UPDATE', payload: personalizedState });
-      }
-    }
+  publishRealtimeMessage(currentRoomCode, {
+    senderId: myId,
+    type: 'STATE_UPDATE',
+    payload: serverState
   });
 }
 
 // ==========================================
-// LOGIC THÀNH VIÊN (CLIENT ENGINE - SEQUENTIAL HANDSHAKE)
+// LOGIC THÀNH VIÊN (CLIENT ENGINE)
 // ==========================================
 function initClient(roomCode, playerName, isReconnect = false) {
-  if (connectionTimeoutTimer) clearTimeout(connectionTimeoutTimer);
-  if (heartbeatInterval) clearInterval(heartbeatInterval);
-  if (myPeer) {
-    try { myPeer.destroy(); } catch (e) {}
+  if (roomWs) {
+    try { roomWs.close(); } catch (e) {}
   }
+  if (clientJoinTimeoutTimer) clearTimeout(clientJoinTimeoutTimer);
+  if (heartbeatTimer) clearInterval(heartbeatTimer);
 
   const cleanRoomCode = roomCode.trim().toUpperCase();
-  const hostPeerId = `${ROOM_ID_PREFIX}${cleanRoomCode.toLowerCase()}`;
+  myId = myId || ('user_' + Math.random().toString(36).substring(2, 9));
+  isHost = false;
+  currentRoomCode = cleanRoomCode;
 
-  setAuthButtonsLoading(true, 'JOIN', 'Đang kết nối Server...');
+  setAuthButtonsLoading(true, 'JOIN', 'Đang kết nối...');
 
-  connectionTimeoutTimer = setTimeout(() => {
+  clientJoinTimeoutTimer = setTimeout(() => {
     setAuthButtonsLoading(false);
     showToast(`Không tìm thấy phòng [${cleanRoomCode}] hoặc Chủ phòng chưa sẵn sàng!`);
     clearSession();
-  }, 12000);
+  }, 6000);
 
-  myPeer = new Peer(PEER_CONFIG);
+  const topic = getRoomTopic(cleanRoomCode);
+  roomWs = new WebSocket(`${REALTIME_WS_ENDPOINT}/${topic}/ws`);
 
-  // BƯỚC 1: Đợi máy khách nhận ID từ máy chủ báo hiệu thành công
-  myPeer.on('open', (id) => {
-    myId = id;
-    isHost = false;
-    currentRoomCode = cleanRoomCode;
+  roomWs.onopen = () => {
+    saveSession({ roomCode: cleanRoomCode, playerName, isHost: false, myId });
 
-    setAuthButtonsLoading(true, 'JOIN', 'Đang bắt tay Host...');
+    sendAction(isReconnect ? 'RECONNECT_REQUEST' : 'JOIN_REQUEST', {
+      name: playerName
+    });
 
-    // BƯỚC 2: Phát lệnh kết nối tới máy Host
-    hostConnection = myPeer.connect(hostPeerId, { reliable: true });
+    heartbeatTimer = setInterval(() => {
+      if (roomWs && roomWs.readyState === WebSocket.OPEN) {
+        roomWs.send(JSON.stringify({ type: 'PING' }));
+      }
+    }, 15000);
+  };
 
-    hostConnection.on('open', () => {
-      if (connectionTimeoutTimer) clearTimeout(connectionTimeoutTimer);
-      setAuthButtonsLoading(false);
+  roomWs.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      if (data.event === 'message') {
+        const msg = JSON.parse(data.message);
+        if (msg.senderId === myId) return;
 
-      saveSession({ roomCode: cleanRoomCode, playerName, isHost: false });
-      showToast('Kết nối phòng thành công!');
+        if (msg.type === 'STATE_UPDATE') {
+          if (clientJoinTimeoutTimer) clearTimeout(clientJoinTimeoutTimer);
+          setAuthButtonsLoading(false);
 
-      heartbeatInterval = setInterval(() => {
-        if (hostConnection && hostConnection.open) {
-          hostConnection.send({ type: 'PING' });
+          const rawState = msg.payload;
+          const me = rawState.players.find(p => p.id === myId);
+
+          renderGameState({
+            ...rawState,
+            roomCode: rawState.code,
+            isHost: false,
+            activePlayerId: rawState.players[rawState.turnIndex]?.id,
+            players: rawState.players.map(p => ({
+              ...p,
+              isYou: p.id === myId,
+              character: (p.id === myId && !p.hasGuessedCorrectly && rawState.state !== 'ENDED' && !p.isSpectator) ? '???' : p.character
+            }))
+          });
+        } else if (msg.type === 'SEND_REACTION') {
+          spawnFloatingEmoji(msg.payload.emoji, msg.payload.senderName);
+        } else if (msg.type === 'KICKED' && msg.targetId === myId) {
+          clearSession();
+          alert(msg.message || 'Bạn đã bị mời ra khỏi phòng!');
+          location.reload();
         }
-      }, 3000);
-
-      const actionType = isReconnect ? 'RECONNECT_REQUEST' : 'JOIN_REQUEST';
-      hostConnection.send({
-        type: actionType,
-        payload: { name: playerName }
-      });
-
-      enterLobbyUI(cleanRoomCode, false);
-    });
-
-    hostConnection.on('data', (data) => {
-      if (data && data.type === 'PONG') return;
-      if (data && data.type === 'HANDSHAKE_ACK') {
-        const actionType = isReconnect ? 'RECONNECT_REQUEST' : 'JOIN_REQUEST';
-        hostConnection.send({
-          type: actionType,
-          payload: { name: playerName }
-        });
-        return;
       }
+    } catch (e) {}
+  };
 
-      if (data.type === 'STATE_UPDATE') {
-        renderGameState(data.payload);
-      } else if (data.type === 'BROADCAST_REACTION') {
-        spawnFloatingEmoji(data.payload.emoji, data.payload.senderName);
-      } else if (data.type === 'KICKED') {
-        clearSession();
-        alert(data.message || 'Bạn đã bị mời ra khỏi phòng!');
-        location.reload();
-      } else if (data.type === 'ERROR') {
-        showToast(data.message);
-      }
-    });
-
-    hostConnection.on('close', () => {
-      if (heartbeatInterval) clearInterval(heartbeatInterval);
-      showToast('Mất kết nối tới Chủ phòng!');
-      clearSession();
-      setTimeout(() => location.reload(), 2500);
-    });
-
-    hostConnection.on('error', (err) => {
-      if (connectionTimeoutTimer) clearTimeout(connectionTimeoutTimer);
-      setAuthButtonsLoading(false);
-      showToast('Lỗi đường truyền: ' + err);
-    });
-  });
-
-  myPeer.on('error', (err) => {
-    if (connectionTimeoutTimer) clearTimeout(connectionTimeoutTimer);
+  roomWs.onerror = () => {
+    if (clientJoinTimeoutTimer) clearTimeout(clientJoinTimeoutTimer);
     setAuthButtonsLoading(false);
-    if (err.type === 'peer-unavailable') {
-      showToast(`Không tìm thấy phòng [${cleanRoomCode}], vui lòng kiểm tra lại mã!`);
-      clearSession();
-    } else {
-      showToast('Lỗi kết nối P2P: ' + err.type);
-    }
-  });
+    showToast('Lỗi kết nối phòng!');
+  };
 }
 
 function sendAction(type, payload = {}) {
   if (isHost) {
     handleClientAction(myId, { type, payload });
-  } else if (hostConnection && hostConnection.open) {
-    hostConnection.send({ type, payload });
+  } else {
+    publishRealtimeMessage(currentRoomCode, {
+      senderId: myId,
+      type,
+      payload
+    });
   }
 }
 
