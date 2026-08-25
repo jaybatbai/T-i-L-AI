@@ -242,9 +242,9 @@ window.togglePresetTheme = function(presetKey) {
   rebuildCharacterPool();
   renderModalPresetButtons();
 
+  // Đồng bộ trạng thái chủ đề tới các máy khác mà không spam khung nhật ký
   if (isHost && serverState) {
     serverState.currentThemeName = currentThemeName;
-    serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-indigo-900/80 text-indigo-300 text-[10px] font-bold mr-1">CHỦ ĐỀ</span> Cập nhật kho: <b class="text-amber-400">${currentThemeName}</b> (${currentCharacterPool.length} nhân vật).`);
     broadcastHostState();
   }
 };
@@ -345,6 +345,7 @@ window.insertQuickNote = function(tag) {
   textareaNotepad.scrollTop = textareaNotepad.scrollHeight;
 };
 
+// Render Trợ Lý Gợi Ý Câu Hỏi (Đã sửa lỗi hiển thị tràn chữ)
 function renderQuestionAssistant() {
   const container = document.getElementById('assistant-categories');
   if (!container || !window.QUESTION_SUGGESTIONS) return;
@@ -356,9 +357,9 @@ function renderQuestionAssistant() {
         <span class="text-xs font-black uppercase tracking-wider text-indigo-300 block mb-2.5">${cat.name}</span>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
           ${cat.list.map(q => `
-            <button onclick="pickSuggestedQuestion('${q.replace(/'/g, "\\'")}')" class="text-left px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500 hover:bg-slate-850 text-xs font-semibold text-slate-200 transition active:scale-98 flex items-center justify-between group">
-              <span class="truncate">${q}</span>
-              <span class="text-indigo-400 opacity-0 group-hover:opacity-100 transition text-sm">➔</span>
+            <button onclick="pickSuggestedQuestion('${q.replace(/'/g, "\\'")}')" class="text-left p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500 hover:bg-slate-850 text-xs font-semibold text-slate-200 transition active:scale-98 flex items-start justify-between gap-2 group">
+              <span class="leading-relaxed break-words flex-grow">${q}</span>
+              <span class="text-indigo-400 opacity-0 group-hover:opacity-100 transition text-sm flex-shrink-0 mt-0.5">➔</span>
             </button>
           `).join('')}
         </div>
@@ -443,7 +444,7 @@ function startHostAuthoritativeTimer() {
 // ==========================================
 // LOGIC CHỦ PHÒNG (HOST ENGINE)
 // ==========================================
-function initHost(roomCode, playerName, existingPeerId = null) {
+function initHost(roomCode, playerName) {
   const peerId = `whoami-${roomCode.toLowerCase()}`;
   myPeer = new Peer(peerId);
 
@@ -515,11 +516,9 @@ function handleClientAction(senderPeerId, data) {
   if (!serverState) return;
   const { type, payload } = data;
 
-  // Xử lý Reconnect từ thành viên cũ
   if (type === 'RECONNECT_REQUEST') {
     const existingPlayer = serverState.players.find(p => p.name === payload.name);
     if (existingPlayer) {
-      // Cập nhật socket ID mới cho người chơi cũ
       const oldId = existingPlayer.id;
       existingPlayer.id = senderPeerId;
       connectionsMap.delete(oldId);
@@ -530,7 +529,6 @@ function handleClientAction(senderPeerId, data) {
     }
   }
 
-  // Xử lý Thành viên mới vào phòng hoặc Chuyển sang Spectator nếu trận đã bắt đầu
   if (type === 'JOIN_REQUEST') {
     const isMidGame = serverState.state !== 'LOBBY';
     const isSpectator = isMidGame;
@@ -588,8 +586,8 @@ function handleClientAction(senderPeerId, data) {
         }
       }
 
-      const activeActualPlayers = serverState.players.filter(p => !p.isSpectator);
-      if (activeActualPlayers.length < 2) {
+      const activeMainPlayers = serverState.players.filter(p => !p.isSpectator);
+      if (activeMainPlayers.length < 2) {
         serverState.state = 'LOBBY';
         serverState.currentQuestion = null;
         serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold mr-1">HỆ THỐNG</span> Phòng thiếu người chơi, trở về trạng thái phòng chờ.`);
@@ -657,12 +655,10 @@ function handleClientAction(senderPeerId, data) {
   }
 }
 
-// Bỏ qua khán giả khi tính toán số phiếu biểu quyết cần thiết
 function checkPendingVoteCompletion() {
   if (!serverState || !serverState.currentQuestion) return;
   const activePlayer = serverState.players[serverState.turnIndex];
   
-  // Chỉ tính những người chơi thực thụ đang có mặt (loại trừ người hỏi và khán giả)
   const votersNeeded = serverState.players.filter(p => p.id !== activePlayer.id && !p.isSpectator);
   const answeredKeys = Object.keys(serverState.currentQuestion.answers).filter(id => {
     return votersNeeded.some(v => v.id === id);
@@ -682,7 +678,6 @@ function checkPendingVoteCompletion() {
         sound.victory();
         serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-emerald-900/80 text-emerald-300 text-[10px] font-bold mr-1">CHÍNH XÁC</span> [Hạng ${activePlayer.finishRank}] <b class="text-amber-400">${activePlayer.name}</b> đã tìm ra nhân vật <b class="text-emerald-300">"${activePlayer.character}"</b>!`);
         
-        // Kiểm tra xem tất cả người chơi chính đã đoán xong chưa
         const activeMainPlayers = serverState.players.filter(p => !p.isSpectator);
         if (activeMainPlayers.every(p => p.hasGuessedCorrectly)) {
           serverState.state = 'ENDED';
@@ -724,7 +719,6 @@ function checkPendingVoteCompletion() {
   }
 }
 
-// Bỏ qua khán giả và người đã đoán đúng khi chuyển lượt
 function advanceHostTurn() {
   let attempts = 0;
   const totalPlayers = serverState.players.length;
@@ -751,7 +745,6 @@ function handlePlayerDisconnect(peerId) {
     serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold mr-1">RỜI PHÒNG</span> <b class="text-slate-300">${leaving.name}</b> đã ngắt kết nối tạm thời.`);
   }
 
-  // Nếu người đang có lượt bị ngắt kết nối
   if (serverState.state === 'PLAYING') {
     if (serverState.currentQuestion) {
       if (serverState.currentQuestion.askedById === peerId) {
@@ -1474,7 +1467,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initNotepad();
   renderQuestionAssistant();
 
-  // Khôi phục phiên tự động nếu F5 trang
   const existingSession = getSession();
   if (existingSession && existingSession.roomCode && existingSession.playerName) {
     showToast(`Đang kết nối lại phòng [${existingSession.roomCode}]...`);
@@ -1840,7 +1832,6 @@ document.addEventListener('DOMContentLoaded', () => {
     btnStartGame.addEventListener('click', () => {
       if (!isHost || !serverState) return;
 
-      // Đưa tất cả khán giả thành người chơi chính thức khi ván mới bắt đầu
       serverState.players.forEach(p => {
         p.isSpectator = false;
       });
@@ -1889,7 +1880,7 @@ document.addEventListener('DOMContentLoaded', () => {
       p.hasGuessedCorrectly = false;
       p.questionsAskedCount = 0;
       p.finishRank = null;
-      p.isSpectator = false; // Reset khán giả thành người chơi chính thức
+      p.isSpectator = false;
     });
     serverState.logs.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-bold mr-1">VÁN MỚI</span> Phòng đang ở trạng thái chuẩn bị ván mới.`);
     const modalLeaderboard = document.getElementById('modal-leaderboard');
