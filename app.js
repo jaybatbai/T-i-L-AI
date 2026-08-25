@@ -771,7 +771,7 @@ function initHost(roomCode, playerName) {
   if (heartbeatInterval) clearInterval(heartbeatInterval);
 
   const cleanRoomCode = roomCode.trim().toUpperCase();
-  const peerId = `whoami-v5-${cleanRoomCode.toLowerCase()}`;
+  const peerId = `whoami-room-${cleanRoomCode.toLowerCase()}`;
   
   myPeer = new Peer(peerId, PEER_CONFIG);
 
@@ -1170,7 +1170,7 @@ function broadcastHostState() {
 }
 
 // ==========================================
-// LOGIC THÀNH VIÊN (CLIENT ENGINE)
+// LOGIC THÀNH VIÊN (CLIENT ENGINE VỚI AUTO-RETRY)
 // ==========================================
 function initClient(roomCode, playerName, isReconnect = false) {
   if (myPeer) {
@@ -1180,6 +1180,8 @@ function initClient(roomCode, playerName, isReconnect = false) {
   if (heartbeatInterval) clearInterval(heartbeatInterval);
 
   const cleanRoomCode = roomCode.trim().toUpperCase();
+  let retryCount = 0;
+  const maxRetries = 3;
 
   setAuthButtonsLoading(true, 'JOIN', 'Đang kết nối...');
 
@@ -1187,7 +1189,7 @@ function initClient(roomCode, playerName, isReconnect = false) {
     setAuthButtonsLoading(false);
     showToast(`Không tìm thấy phòng [${cleanRoomCode}] hoặc Chủ phòng chưa sẵn sàng!`);
     clearSession();
-  }, 10000);
+  }, 12000);
 
   myPeer = new Peer(PEER_CONFIG);
 
@@ -1196,7 +1198,16 @@ function initClient(roomCode, playerName, isReconnect = false) {
     isHost = false;
     currentRoomCode = cleanRoomCode;
 
-    const hostPeerId = `whoami-v5-${cleanRoomCode.toLowerCase()}`;
+    attemptConnectToHost();
+  });
+
+  function attemptConnectToHost() {
+    const hostPeerId = `whoami-room-${cleanRoomCode.toLowerCase()}`;
+    
+    if (hostConnection) {
+      try { hostConnection.close(); } catch (e) {}
+    }
+
     hostConnection = myPeer.connect(hostPeerId);
 
     hostConnection.on('open', () => {
@@ -1253,19 +1264,33 @@ function initClient(roomCode, playerName, isReconnect = false) {
     });
 
     hostConnection.on('error', (err) => {
+      handleRetryOrError(err);
+    });
+  }
+
+  function handleRetryOrError(err) {
+    if (retryCount < maxRetries) {
+      retryCount++;
+      setAuthButtonsLoading(true, 'JOIN', `Đang thử lại (${retryCount}/${maxRetries})...`);
+      setTimeout(() => {
+        if (!isHost && myPeer && !myPeer.destroyed) {
+          attemptConnectToHost();
+        }
+      }, 1200);
+    } else {
       if (connectionTimeoutTimer) clearTimeout(connectionTimeoutTimer);
       setAuthButtonsLoading(false);
-      showToast('Lỗi đường truyền: ' + err);
-    });
-  });
+      showToast(`Không tìm thấy phòng [${cleanRoomCode}], vui lòng kiểm tra lại mã!`);
+      clearSession();
+    }
+  }
 
   myPeer.on('error', (err) => {
-    if (connectionTimeoutTimer) clearTimeout(connectionTimeoutTimer);
-    setAuthButtonsLoading(false);
     if (err.type === 'peer-unavailable') {
-      showToast(`Mã phòng [${cleanRoomCode}] không tồn tại!`);
-      clearSession();
+      handleRetryOrError(err);
     } else {
+      if (connectionTimeoutTimer) clearTimeout(connectionTimeoutTimer);
+      setAuthButtonsLoading(false);
       showToast('Lỗi kết nối P2P: ' + err.type);
     }
   });
