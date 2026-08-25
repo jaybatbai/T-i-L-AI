@@ -16,6 +16,9 @@ const PEER_CONFIG = {
   }
 };
 
+const PRIMARY_PREFIX = 'whoami-app-';
+const FALLBACK_PREFIXES = ['whoami-app-', 'whoami-room-', 'whoami-v5-', 'whoami-v4-', 'whoami-'];
+
 // ==========================================
 // HỆ THỐNG ÂM THANH & RUNG PHẢN HỒI (SOUND & HAPTIC)
 // ==========================================
@@ -771,7 +774,7 @@ function initHost(roomCode, playerName) {
   if (heartbeatInterval) clearInterval(heartbeatInterval);
 
   const cleanRoomCode = roomCode.trim().toUpperCase();
-  const peerId = `whoami-room-${cleanRoomCode.toLowerCase()}`;
+  const peerId = `${PRIMARY_PREFIX}${cleanRoomCode.toLowerCase()}`;
   
   myPeer = new Peer(peerId, PEER_CONFIG);
 
@@ -1170,7 +1173,7 @@ function broadcastHostState() {
 }
 
 // ==========================================
-// LOGIC THÀNH VIÊN (CLIENT ENGINE VỚI AUTO-RETRY)
+// LOGIC THÀNH VIÊN (MULTI-PREFIX AUTO-RESOLVER)
 // ==========================================
 function initClient(roomCode, playerName, isReconnect = false) {
   if (myPeer) {
@@ -1180,8 +1183,9 @@ function initClient(roomCode, playerName, isReconnect = false) {
   if (heartbeatInterval) clearInterval(heartbeatInterval);
 
   const cleanRoomCode = roomCode.trim().toUpperCase();
+  let prefixIndex = 0;
   let retryCount = 0;
-  const maxRetries = 5;
+  const maxRetriesPerPrefix = 2;
 
   setAuthButtonsLoading(true, 'JOIN', 'Đang kết nối...');
 
@@ -1189,7 +1193,7 @@ function initClient(roomCode, playerName, isReconnect = false) {
     setAuthButtonsLoading(false);
     showToast(`Không tìm thấy phòng [${cleanRoomCode}] hoặc Chủ phòng chưa sẵn sàng!`);
     clearSession();
-  }, 14000);
+  }, 16000);
 
   myPeer = new Peer(PEER_CONFIG);
 
@@ -1198,12 +1202,23 @@ function initClient(roomCode, playerName, isReconnect = false) {
     isHost = false;
     currentRoomCode = cleanRoomCode;
 
-    attemptConnectToHost();
+    attemptConnect();
   });
 
-  function attemptConnectToHost() {
-    const hostPeerId = `whoami-room-${cleanRoomCode.toLowerCase()}`;
-    
+  function attemptConnect() {
+    if (prefixIndex >= FALLBACK_PREFIXES.length) {
+      if (connectionTimeoutTimer) clearTimeout(connectionTimeoutTimer);
+      setAuthButtonsLoading(false);
+      showToast(`Không tìm thấy phòng [${cleanRoomCode}], vui lòng kiểm tra lại mã!`);
+      clearSession();
+      return;
+    }
+
+    const currentPrefix = FALLBACK_PREFIXES[prefixIndex];
+    const hostPeerId = `${currentPrefix}${cleanRoomCode.toLowerCase()}`;
+
+    setAuthButtonsLoading(true, 'JOIN', `Đang dò phòng (${prefixIndex + 1}/${FALLBACK_PREFIXES.length})...`);
+
     if (hostConnection) {
       try { hostConnection.close(); } catch (e) {}
     }
@@ -1263,31 +1278,27 @@ function initClient(roomCode, playerName, isReconnect = false) {
       setTimeout(() => location.reload(), 2500);
     });
 
-    hostConnection.on('error', (err) => {
-      handleRetryOrError(err);
+    hostConnection.on('error', () => {
+      nextPrefixAttempt();
     });
   }
 
-  function handleRetryOrError(err) {
-    if (retryCount < maxRetries) {
-      retryCount++;
-      setAuthButtonsLoading(true, 'JOIN', `Đang tìm phòng (${retryCount}/${maxRetries})...`);
-      setTimeout(() => {
-        if (!isHost && myPeer && !myPeer.destroyed) {
-          attemptConnectToHost();
-        }
-      }, 1200);
-    } else {
-      if (connectionTimeoutTimer) clearTimeout(connectionTimeoutTimer);
-      setAuthButtonsLoading(false);
-      showToast(`Không tìm thấy phòng [${cleanRoomCode}], vui lòng kiểm tra lại mã!`);
-      clearSession();
+  function nextPrefixAttempt() {
+    retryCount++;
+    if (retryCount >= maxRetriesPerPrefix) {
+      retryCount = 0;
+      prefixIndex++;
     }
+    setTimeout(() => {
+      if (!isHost && myPeer && !myPeer.destroyed) {
+        attemptConnect();
+      }
+    }, 600);
   }
 
   myPeer.on('error', (err) => {
     if (err.type === 'peer-unavailable') {
-      handleRetryOrError(err);
+      nextPrefixAttempt();
     } else {
       if (connectionTimeoutTimer) clearTimeout(connectionTimeoutTimer);
       setAuthButtonsLoading(false);
@@ -1929,7 +1940,7 @@ function renderGameState(data) {
               label = 'KHÔNG RÕ';
             }
             return `<span class="px-2 py-0.5 rounded-lg border ${badgeClass} text-[11px] font-semibold"><b class="text-amber-300">${voter?.name || '...'}:</b> ${label}</span>`;
-        }).join('');
+          }).join('');
         } else {
           voteResults.innerHTML = '<span class="text-slate-500 italic text-[11px]">Đang chờ mọi người nhấn biểu quyết...</span>';
         }
