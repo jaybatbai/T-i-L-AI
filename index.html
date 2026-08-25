@@ -287,6 +287,10 @@
           <div class="space-y-3">
             <div class="flex gap-2">
               <input id="input-question" type="text" placeholder="Ví dụ: Tôi có phải là nhân vật hoạt hình không?..." class="flex-grow bg-slate-950 border border-slate-700/80 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 text-slate-100 placeholder-slate-500">
+              <button id="btn-open-question-assistant" class="px-3.5 py-3 rounded-2xl bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/40 text-xs font-extrabold transition active:scale-95 flex items-center gap-1.5 flex-shrink-0" title="Mở danh sách câu hỏi mẫu">
+                <span>💡</span>
+                <span class="hidden sm:inline">Gợi ý</span>
+              </button>
               <button id="btn-send-question" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-5 py-3 rounded-2xl text-sm transition shadow-lg shadow-amber-500/20 active:scale-95 flex-shrink-0">
                 Hỏi
               </button>
@@ -378,6 +382,25 @@
         </div>
         <div id="game-logs" class="flex-grow overflow-y-auto space-y-2 text-xs text-slate-300 pr-1 custom-scrollbar"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL GỢI Ý CÂU HỎI (QUESTION ASSISTANT) -->
+  <div id="modal-question-assistant" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4 hidden">
+    <div class="w-full max-w-lg bg-slate-900 border border-indigo-500/40 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">💡</span>
+          <div>
+            <h3 class="text-base font-black text-indigo-400 uppercase tracking-wider">Trợ lý gợi ý câu hỏi</h3>
+            <p class="text-[11px] text-slate-400">Chọn 1 câu hỏi để tự động điền vào lượt của bạn</p>
+          </div>
+        </div>
+        <button id="btn-close-assistant-modal" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition">✕</button>
+      </div>
+
+      <!-- Tabs / Categories Container -->
+      <div id="assistant-categories" class="flex-grow overflow-y-auto space-y-4 pr-1 custom-scrollbar"></div>
     </div>
   </div>
 
