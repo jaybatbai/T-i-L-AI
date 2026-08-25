@@ -1,28 +1,16 @@
 // ==========================================
-// CẤU HÌNH MẠNG P2P TOÀN CẦU (STUN + TURN RELAY)
+// CẤU HÌNH MẠNG P2P TOÀN CẦU (GOOGLE & TWILIO STUN)
 // ==========================================
 const PEER_CONFIG = {
+  debug: 0,
   config: {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
       { urls: 'stun:stun2.l.google.com:19302' },
-      { urls: 'stun:stun.relay.metered.ca:80' },
-      {
-        urls: 'turn:standard.relay.metered.ca:80',
-        username: 'openrelayproject',
-        credential: 'openrelayproject'
-      },
-      {
-        urls: 'turn:standard.relay.metered.ca:443',
-        username: 'openrelayproject',
-        credential: 'openrelayproject'
-      },
-      {
-        urls: 'turn:standard.relay.metered.ca:443?transport=tcp',
-        username: 'openrelayproject',
-        credential: 'openrelayproject'
-      }
+      { urls: 'stun:stun3.l.google.com:19302' },
+      { urls: 'stun:stun4.l.google.com:19302' },
+      { urls: 'stun:global.stun.twilio.com:3478' }
     ],
     iceCandidatePoolSize: 10
   }
@@ -479,7 +467,12 @@ function copyRoomCode() {
 }
 
 function generateRoomCode() {
-  return Math.random().toString(36).substring(2, 6).toUpperCase();
+  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let code = '';
+  for (let i = 0; i < 4; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
 }
 
 function shuffle(array) {
@@ -778,9 +771,8 @@ function initHost(roomCode, playerName) {
   if (heartbeatInterval) clearInterval(heartbeatInterval);
 
   const cleanRoomCode = roomCode.trim().toUpperCase();
-  const peerId = `whoami-v4-${cleanRoomCode.toLowerCase()}`;
+  const peerId = `whoami-v5-${cleanRoomCode.toLowerCase()}`;
   
-  showToast(`Đang khởi tạo máy chủ phòng [${cleanRoomCode}]...`);
   myPeer = new Peer(peerId, PEER_CONFIG);
 
   myPeer.on('open', (id) => {
@@ -828,6 +820,7 @@ function initHost(roomCode, playerName) {
   myPeer.on('connection', (conn) => {
     conn.on('open', () => {
       connectionsMap.set(conn.peer, conn);
+      conn.send({ type: 'HANDSHAKE_ACK' });
     });
 
     conn.on('data', (data) => {
@@ -851,7 +844,7 @@ function initHost(roomCode, playerName) {
   myPeer.on('error', (err) => {
     setAuthButtonsLoading(false);
     if (err.type === 'unavailable-id') {
-      showToast('Mã phòng này vừa được sử dụng hoặc đang kẹt kết nối, hãy bấm "Tạo phòng mới" lại!');
+      showToast('Mã phòng này đang được mở ở tab khác hoặc vừa kết thúc, hãy bấm "Tạo phòng mới" lại!');
       clearSession();
     } else {
       showToast('Lỗi máy chủ P2P: ' + err.type);
@@ -892,21 +885,24 @@ function handleClientAction(senderPeerId, data) {
     const isMidGame = serverState.state !== 'LOBBY';
     const isSpectator = isMidGame;
 
-    serverState.players.push({
-      id: senderPeerId,
-      name: payload.name || `Người chơi ${serverState.players.length + 1}`,
-      character: isSpectator ? 'Khán giả' : null,
-      hasGuessedCorrectly: isSpectator,
-      questionsAskedCount: 0,
-      finishRank: null,
-      isSpectator: isSpectator
-    });
+    const existingIdx = serverState.players.findIndex(p => p.id === senderPeerId);
+    if (existingIdx === -1) {
+      serverState.players.push({
+        id: senderPeerId,
+        name: payload.name || `Người chơi ${serverState.players.length + 1}`,
+        character: isSpectator ? 'Khán giả' : null,
+        hasGuessedCorrectly: isSpectator,
+        questionsAskedCount: 0,
+        finishRank: null,
+        isSpectator: isSpectator
+      });
 
-    sound.pop();
-    if (isSpectator) {
-      addHostLog(`👀 <b class="text-sky-400">${payload.name}</b> vào xem trận đấu`, { authorId: senderPeerId });
-    } else {
-      addHostLog(`👋 <b class="text-amber-400">${payload.name}</b> đã tham gia phòng`, { authorId: senderPeerId });
+      sound.pop();
+      if (isSpectator) {
+        addHostLog(`👀 <b class="text-sky-400">${payload.name}</b> vào xem trận đấu`, { authorId: senderPeerId });
+      } else {
+        addHostLog(`👋 <b class="text-amber-400">${payload.name}</b> đã tham gia phòng`, { authorId: senderPeerId });
+      }
     }
 
     broadcastHostState();
@@ -1185,14 +1181,13 @@ function initClient(roomCode, playerName, isReconnect = false) {
 
   const cleanRoomCode = roomCode.trim().toUpperCase();
 
-  setAuthButtonsLoading(true, 'JOIN', 'Đang tìm phòng...');
-  showToast(`Đang định tuyến tới phòng [${cleanRoomCode}]...`);
+  setAuthButtonsLoading(true, 'JOIN', 'Đang kết nối...');
 
   connectionTimeoutTimer = setTimeout(() => {
     setAuthButtonsLoading(false);
-    showToast('Hết thời gian chờ: Không tìm thấy phòng hoặc chủ phòng chưa sẵn sàng!');
+    showToast(`Không tìm thấy phòng [${cleanRoomCode}] hoặc Chủ phòng chưa sẵn sàng!`);
     clearSession();
-  }, 12000);
+  }, 10000);
 
   myPeer = new Peer(PEER_CONFIG);
 
@@ -1201,43 +1196,42 @@ function initClient(roomCode, playerName, isReconnect = false) {
     isHost = false;
     currentRoomCode = cleanRoomCode;
 
-    setAuthButtonsLoading(true, 'JOIN', 'Đang vượt NAT...');
-    const hostPeerId = `whoami-v4-${cleanRoomCode.toLowerCase()}`;
-    
-    hostConnection = myPeer.connect(hostPeerId, {
-      reliable: true
-    });
+    const hostPeerId = `whoami-v5-${cleanRoomCode.toLowerCase()}`;
+    hostConnection = myPeer.connect(hostPeerId);
 
     hostConnection.on('open', () => {
       if (connectionTimeoutTimer) clearTimeout(connectionTimeoutTimer);
       setAuthButtonsLoading(false);
 
       saveSession({ roomCode: cleanRoomCode, playerName, isHost: false });
-      showToast('Đã kết nối thành công!');
+      showToast('Kết nối phòng thành công!');
 
-      // Duy trì nhịp tim kết nối (Heartbeat Ping)
       heartbeatInterval = setInterval(() => {
         if (hostConnection && hostConnection.open) {
           hostConnection.send({ type: 'PING' });
         }
       }, 3000);
 
-      if (isReconnect) {
-        hostConnection.send({
-          type: 'RECONNECT_REQUEST',
-          payload: { name: playerName }
-        });
-      } else {
-        hostConnection.send({
-          type: 'JOIN_REQUEST',
-          payload: { name: playerName }
-        });
-      }
+      const actionType = isReconnect ? 'RECONNECT_REQUEST' : 'JOIN_REQUEST';
+      hostConnection.send({
+        type: actionType,
+        payload: { name: playerName }
+      });
+
       enterLobbyUI(cleanRoomCode, false);
     });
 
     hostConnection.on('data', (data) => {
       if (data && data.type === 'PONG') return;
+      if (data && data.type === 'HANDSHAKE_ACK') {
+        const actionType = isReconnect ? 'RECONNECT_REQUEST' : 'JOIN_REQUEST';
+        hostConnection.send({
+          type: actionType,
+          payload: { name: playerName }
+        });
+        return;
+      }
+
       if (data.type === 'STATE_UPDATE') {
         renderGameState(data.payload);
       } else if (data.type === 'BROADCAST_REACTION') {
@@ -1261,7 +1255,7 @@ function initClient(roomCode, playerName, isReconnect = false) {
     hostConnection.on('error', (err) => {
       if (connectionTimeoutTimer) clearTimeout(connectionTimeoutTimer);
       setAuthButtonsLoading(false);
-      showToast('Lỗi đường truyền P2P: ' + err);
+      showToast('Lỗi đường truyền: ' + err);
     });
   });
 
@@ -1269,7 +1263,7 @@ function initClient(roomCode, playerName, isReconnect = false) {
     if (connectionTimeoutTimer) clearTimeout(connectionTimeoutTimer);
     setAuthButtonsLoading(false);
     if (err.type === 'peer-unavailable') {
-      showToast(`Không tìm thấy phòng [${cleanRoomCode}], vui lòng kiểm tra lại mã!`);
+      showToast(`Mã phòng [${cleanRoomCode}] không tồn tại!`);
       clearSession();
     } else {
       showToast('Lỗi kết nối P2P: ' + err.type);
@@ -2376,6 +2370,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (inputRoomCode) {
+    inputRoomCode.addEventListener('input', (e) => {
+      e.target.value = e.target.value.toUpperCase().trim();
+    });
     inputRoomCode.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') btnJoin.click();
     });
