@@ -1,5 +1,5 @@
 // ==========================================
-// HỆ THỐNG ÂM THANH & RUNG PHẢN HỒI (SOUND & HAPTIC)
+// HỆ THỐNG ÂM THANH ĐA VŨ TRỤ (THEMED SOUND & HAPTIC)
 // ==========================================
 class FeedbackEngine {
   constructor() {
@@ -25,26 +25,29 @@ class FeedbackEngine {
     }
   }
 
-  playTone(freq, type, duration, gainVal = 0.1) {
+  playTone(freq, type, duration, gainVal = 0.1, delay = 0) {
     if (this.muted) return;
     this.init();
     if (!this.ctx) return;
 
     try {
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
+      setTimeout(() => {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
 
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
 
-      gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+        gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
 
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
 
-      osc.start();
-      osc.stop(this.ctx.currentTime + duration);
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+      }, delay);
     } catch (e) {
       console.warn('Audio play error', e);
     }
@@ -58,8 +61,8 @@ class FeedbackEngine {
   yourTurn() {
     this.init();
     if (!this.muted && this.ctx) {
-      this.playTone(523.25, 'triangle', 0.1, 0.15);
-      setTimeout(() => this.playTone(659.25, 'triangle', 0.15, 0.15), 100);
+      this.playTone(523.25, 'triangle', 0.1, 0.15); // C5
+      this.playTone(659.25, 'triangle', 0.15, 0.15, 100); // E5
     }
     this.vibrate([120, 80, 120]);
   }
@@ -67,8 +70,8 @@ class FeedbackEngine {
   success() {
     this.init();
     if (!this.muted && this.ctx) {
-      this.playTone(587.33, 'triangle', 0.12, 0.15);
-      setTimeout(() => this.playTone(880, 'triangle', 0.25, 0.2), 100);
+      this.playTone(587.33, 'triangle', 0.12, 0.15); // D5
+      this.playTone(880, 'triangle', 0.25, 0.2, 100); // A5
     }
     this.vibrate([80, 60, 160]);
   }
@@ -77,7 +80,7 @@ class FeedbackEngine {
     this.init();
     if (!this.muted && this.ctx) {
       this.playTone(220, 'sawtooth', 0.2, 0.15);
-      setTimeout(() => this.playTone(174.61, 'sawtooth', 0.35, 0.15), 150);
+      this.playTone(174.61, 'sawtooth', 0.35, 0.15, 150);
     }
     this.vibrate(250);
   }
@@ -86,19 +89,61 @@ class FeedbackEngine {
     this.playTone(400, 'sine', 0.05, 0.08);
   }
 
-  victory() {
+  // Fanfare chiến thắng biến đổi theo gói chủ đề của nhân vật
+  victory(characterName = '') {
     this.init();
-    if (!this.muted && this.ctx) {
-      const notes = [523.25, 659.25, 783.99, 1046.50];
+    this.vibrate([100, 50, 100, 50, 200]);
+    if (this.muted || !this.ctx) return;
+
+    const themeKey = getThemeKeyByCharacter(characterName);
+
+    if (themeKey === 'ANIME') {
+      // 8-bit Chiptune Victory Run
+      const notes = [440, 554.37, 659.25, 880, 1108.73, 1318.51];
       notes.forEach((freq, idx) => {
-        setTimeout(() => this.playTone(freq, 'triangle', 0.3, 0.15), idx * 120);
+        this.playTone(freq, 'square', 0.12, 0.1, idx * 80);
+      });
+    } else if (themeKey === 'HEROES') {
+      // Heroic Brass Fanfare
+      const notes = [392, 523.25, 659.25, 783.99, 1046.5];
+      notes.forEach((freq, idx) => {
+        this.playTone(freq, 'sawtooth', 0.25, 0.12, idx * 110);
+      });
+    } else if (themeKey === 'MEME' || themeKey === 'STREAMER') {
+      // Retro Level-Up / Arcade Chime
+      const notes = [261.63, 329.63, 392, 523.25, 659.25, 783.99, 1046.5];
+      notes.forEach((freq, idx) => {
+        this.playTone(freq, 'sine', 0.1, 0.12, idx * 70);
+      });
+    } else if (themeKey === 'CARTOON') {
+      // Cổ tích / Chuông ngân Disney
+      const notes = [523.25, 659.25, 783.99, 1046.5, 1318.51];
+      notes.forEach((freq, idx) => {
+        this.playTone(freq, 'triangle', 0.22, 0.14, idx * 100);
+      });
+    } else {
+      // Showbiz / All-Stars Pop Chord
+      const notes = [523.25, 659.25, 783.99, 1046.5];
+      notes.forEach((freq, idx) => {
+        this.playTone(freq, 'triangle', 0.3, 0.15, idx * 120);
       });
     }
-    this.vibrate([100, 50, 100, 50, 200]);
   }
 }
 
 const sound = new FeedbackEngine();
+
+// Hàm tra cứu nguồn gốc nhân vật thuộc gói chủ đề nào
+function getThemeKeyByCharacter(characterName) {
+  if (!characterName || !window.PRESET_THEMES) return 'SHOWBIZ';
+  for (const key of Object.keys(window.PRESET_THEMES)) {
+    const list = window.PRESET_THEMES[key].list;
+    if (list && list.some(name => name.toLowerCase() === characterName.toLowerCase())) {
+      return key;
+    }
+  }
+  return 'SHOWBIZ';
+}
 
 // ==========================================
 // KHỞI TẠO BIẾN TRẠNG THÁI & LOCAL/SESSION STORAGE
@@ -138,7 +183,7 @@ let lastTickedSecond = null;
 let lastRenderedQuestionKey = '';
 let previousActivePlayerId = null;
 let lastReactionTimestamp = 0;
-let currentLogFilter = 'ALL'; // 'ALL' | 'MINE'
+let currentLogFilter = 'ALL';
 
 // ==========================================
 // QUẢN LÝ PHIÊN (SESSION PERSISTENCE)
@@ -213,6 +258,8 @@ function rebuildCharacterPool() {
 
   if (names.length === 0) {
     currentThemeName = 'Trống (Hãy chọn chủ đề)';
+  } else if (names.length === 1) {
+    currentThemeName = names[0];
   } else if (names.length <= 2) {
     currentThemeName = names.join(' + ');
   } else {
@@ -329,7 +376,7 @@ function showRoomQRCode() {
 }
 
 // ==========================================
-// HỆ THỐNG BIỂU CẢM ĐỘNG (IN-GAME LIVE REACTIONS)
+// HỆ THỐNG BIỂU CẢM ĐỘNG (LIVE REACTIONS)
 // ==========================================
 window.triggerReaction = function(emoji) {
   const now = Date.now();
@@ -519,7 +566,6 @@ function startHostAuthoritativeTimer() {
   }, 500);
 }
 
-// Hàm ghi log có cấu trúc để phục vụ lọc "Của tôi"
 function addHostLog(html, { authorId = null, involvedIds = [] } = {}) {
   if (!serverState) return;
   const logItem = {
@@ -753,7 +799,6 @@ function handleClientAction(senderPeerId, data) {
     const activePlayer = serverState.players[serverState.turnIndex];
     if (activePlayer.id !== senderPeerId || activePlayer.isSpectator) return;
 
-    // Kiểm tra giới hạn số câu hỏi
     if (serverState.maxQuestionsEnabled && activePlayer.questionsAskedCount >= serverState.maxQuestionsCount) {
       return;
     }
@@ -832,7 +877,7 @@ function checkPendingVoteCompletion() {
         serverState.finishCounter = (serverState.finishCounter || 0) + 1;
         activePlayer.finishRank = serverState.finishCounter;
 
-        sound.victory();
+        sound.victory(activePlayer.character);
         addHostLog(`<span class="px-1.5 py-0.5 rounded bg-emerald-900/80 text-emerald-300 text-[10px] font-bold mr-1">CHÍNH XÁC</span> [Hạng ${activePlayer.finishRank}] <b class="text-amber-400">${activePlayer.name}</b> đã tìm ra nhân vật <b class="text-emerald-300">"${activePlayer.character}"</b>!`, { authorId: activePlayer.id });
         
         const activeMainPlayers = serverState.players.filter(p => !p.isSpectator);
@@ -1368,7 +1413,6 @@ function renderGameState(data) {
     const activePlayer = data.players.find(p => p.id === data.activePlayerId);
     const isMyTurn = data.activePlayerId === myId && !amISpectator;
 
-    // Hiển thị tiến trình số câu hỏi đã dùng
     if (gameQuestionsBadge && gameQuestionsText) {
       if (data.maxQuestionsEnabled && !amISpectator) {
         const used = me?.questionsAskedCount || 0;
@@ -1547,7 +1591,6 @@ function renderGameState(data) {
       panelLastResult.classList.add('hidden');
     }
 
-    // Xử lý Bảng thao tác theo lượt & Khóa khi hết câu hỏi
     if (panelMyTurn) {
       if (isMyTurn && data.state === 'PLAYING') {
         panelMyTurn.classList.remove('hidden');
