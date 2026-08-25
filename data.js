@@ -48,7 +48,7 @@ const PRESET_THEMES = {
       'Po (Kung Fu Panda)', 'Woody (Toy Story)', 'Buzz Lightyear', 'Minion (Kẻ Trộm Mặt Trăng)',
       'Simba (Vua Sư Tử)', 'Shrek (Chàng Chằn Tinh)', 'Thần Đèn Genie (Aladdin)', 'Baymax (Big Hero 6)',
       'Wall-E (Robot Biết Yêu)', 'Nemo (Đi Tìm Nemo)', 'Lightning McQueen (Cars)', 'Judy Hopps (Zootopia)',
-      'Stitch (Lilo & Stitch)', 'Gru (Kẻ Trộm Mặt Trăng)', 'Rapunzel (Công Chúa Tóc Mây)',
+      'Stitch (Lilo & Stitch)', 'Gru (Kẻ Trộm Mặt Trăng)', 'Rapunzel (Công Châu Tóc Mây)',
       'Gấu Pooh (Winnie the Pooh)', 'Mèo Đi Hia (Puss in Boots)'
     ]
   },
