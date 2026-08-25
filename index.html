@@ -57,31 +57,31 @@
   <div id="reaction-canvas" class="fixed inset-0 pointer-events-none z-50 overflow-hidden"></div>
 
   <!-- Toast Notification -->
-  <div id="toast" class="fixed top-5 right-5 z-50 transform transition-all duration-300 translate-y-[-20px] opacity-0 pointer-events-none bg-slate-900/95 border border-amber-500/40 text-amber-300 font-semibold px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 backdrop-blur-md">
+  <div id="toast" class="fixed top-5 right-5 z-50 transform transition-all duration-300 translate-y-[-20px] opacity-0 pointer-events-none bg-slate-900/95 border border-amber-500/40 text-amber-300 font-semibold px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2.5 backdrop-blur-md text-xs sm:text-sm">
     <div class="w-2 h-2 rounded-full bg-amber-400"></div>
     <span id="toast-message">Thông báo</span>
   </div>
 
   <!-- Nút Âm Thanh Toàn Cục -->
-  <button id="btn-toggle-sound" class="fixed top-4 left-4 z-40 p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800 text-slate-300 hover:text-amber-400 backdrop-blur-md transition active:scale-95 shadow-lg flex items-center gap-2 text-xs font-bold">
+  <button id="btn-toggle-sound" class="fixed top-4 left-4 z-40 p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800 text-slate-300 hover:text-amber-400 backdrop-blur-md transition active:scale-95 shadow-lg flex items-center gap-1.5 text-xs font-bold">
     <span id="sound-icon">🔊</span>
     <span id="sound-text" class="hidden sm:inline">Bật âm</span>
   </button>
 
   <!-- Thanh Thả Reaction Nổi -->
-  <div id="panel-reactions" class="fixed bottom-4 left-4 z-40 bg-slate-900/90 border border-slate-800 backdrop-blur-xl px-3 py-2 rounded-2xl shadow-2xl flex items-center gap-1.5 hidden transition-all">
-    <button onclick="triggerReaction('😂')" class="p-1.5 text-lg hover:scale-135 active:scale-90 transition transform" title="Cười">😂</button>
-    <button onclick="triggerReaction('🔥')" class="p-1.5 text-lg hover:scale-135 active:scale-90 transition transform" title="Cháy">🔥</button>
-    <button onclick="triggerReaction('🤡')" class="p-1.5 text-lg hover:scale-135 active:scale-90 transition transform" title="Hề">🤡</button>
-    <button onclick="triggerReaction('👏')" class="p-1.5 text-lg hover:scale-135 active:scale-90 transition transform" title="Vỗ tay">👏</button>
-    <button onclick="triggerReaction('😱')" class="p-1.5 text-lg hover:scale-135 active:scale-90 transition transform" title="Bất ngờ">😱</button>
-    <button onclick="triggerReaction('💩')" class="p-1.5 text-lg hover:scale-135 active:scale-90 transition transform" title="Cà khịa">💩</button>
+  <div id="panel-reactions" class="fixed bottom-4 left-4 z-40 bg-slate-900/90 border border-slate-800 backdrop-blur-xl px-2.5 py-1.5 rounded-2xl shadow-2xl flex items-center gap-1 hidden transition-all">
+    <button onclick="triggerReaction('😂')" class="p-1 text-base sm:text-lg hover:scale-125 active:scale-90 transition transform" title="Cười">😂</button>
+    <button onclick="triggerReaction('🔥')" class="p-1 text-base sm:text-lg hover:scale-125 active:scale-90 transition transform" title="Cháy">🔥</button>
+    <button onclick="triggerReaction('🤡')" class="p-1 text-base sm:text-lg hover:scale-125 active:scale-90 transition transform" title="Hề">🤡</button>
+    <button onclick="triggerReaction('👏')" class="p-1 text-base sm:text-lg hover:scale-125 active:scale-90 transition transform" title="Vỗ tay">👏</button>
+    <button onclick="triggerReaction('😱')" class="p-1 text-base sm:text-lg hover:scale-125 active:scale-90 transition transform" title="Bất ngờ">😱</button>
+    <button onclick="triggerReaction('💩')" class="p-1 text-base sm:text-lg hover:scale-125 active:scale-90 transition transform" title="Cà khịa">💩</button>
   </div>
 
   <!-- Nút Mở Sổ Ghi Chú -->
-  <button id="btn-toggle-notepad" class="fixed bottom-4 right-4 z-40 px-4 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold shadow-2xl shadow-indigo-600/40 border border-indigo-400/30 flex items-center gap-2 text-xs sm:text-sm transition active:scale-95 hidden">
+  <button id="btn-toggle-notepad" class="fixed bottom-4 right-4 z-40 px-3.5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold shadow-2xl shadow-indigo-600/40 border border-indigo-400/30 flex items-center gap-1.5 text-xs sm:text-sm transition active:scale-95 hidden">
     <span>📝</span>
-    <span>Sổ ghi chú</span>
+    <span>Ghi chú</span>
     <span id="notepad-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 hidden"></span>
   </button>
 
@@ -90,7 +90,7 @@
     <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
       <div class="flex items-center gap-2">
         <span class="text-base">📝</span>
-        <h4 class="text-xs font-black uppercase tracking-wider text-indigo-400">Ghi chú riêng tư của bạn</h4>
+        <h4 class="text-xs font-black uppercase tracking-wider text-indigo-400">Ghi chú cá nhân</h4>
       </div>
       <div class="flex items-center gap-1.5">
         <button id="btn-clear-notepad" title="Xóa hết chữ" class="text-[11px] text-slate-500 hover:text-rose-400 px-2 py-0.5 rounded-lg hover:bg-slate-800 transition">Xóa</button>
@@ -100,23 +100,23 @@
 
     <!-- Quick Tag Chips -->
     <div>
-      <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Chèn nhanh gợi ý:</span>
+      <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Gắn thẻ nhanh:</span>
       <div class="flex flex-wrap gap-1.5 text-[11px]">
         <button onclick="insertQuickNote('[✓] Nam')" class="px-2 py-0.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 transition">+ Nam</button>
         <button onclick="insertQuickNote('[✓] Nữ')" class="px-2 py-0.5 rounded-lg bg-pink-500/10 hover:bg-pink-500/20 text-pink-300 border border-pink-500/30 transition">+ Nữ</button>
         <button onclick="insertQuickNote('[✓] Người thật')" class="px-2 py-0.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 transition">+ Người thật</button>
-        <button onclick="insertQuickNote('[✓] Hư cấu/Ảo')" class="px-2 py-0.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition">+ Hư cấu</button>
-        <button onclick="insertQuickNote('[✓] Châu Á/VN')" class="px-2 py-0.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 transition">+ Châu Á</button>
+        <button onclick="insertQuickNote('[✓] Hư cấu')" class="px-2 py-0.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition">+ Hư cấu</button>
+        <button onclick="insertQuickNote('[✓] Châu Á')" class="px-2 py-0.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 transition">+ Châu Á</button>
         <button onclick="insertQuickNote('[✓] Âu Mỹ')" class="px-2 py-0.5 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 transition">+ Âu Mỹ</button>
         <button onclick="insertQuickNote('[✗] ')" class="px-2 py-0.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition">+ [✗] SAI</button>
       </div>
     </div>
 
     <!-- Textarea -->
-    <textarea id="textarea-notepad" rows="6" placeholder="Ghi lại các đặc điểm bạn đã hỏi hoặc loại trừ ở đây (Chỉ một mình bạn thấy)..." class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 custom-scrollbar resize-none"></textarea>
+    <textarea id="textarea-notepad" rows="6" placeholder="Ghi chép gợi ý hoặc loại trừ nhân vật tại đây..." class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 custom-scrollbar resize-none"></textarea>
     
     <div class="flex items-center justify-between text-[10px] text-slate-500">
-      <span>Tự động lưu liên tục</span>
+      <span>Đã tự động lưu</span>
       <span id="notepad-char-count">0 ký tự</span>
     </div>
   </div>
@@ -137,139 +137,144 @@
       <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-500 tracking-tight">
         ĐOÁN NHÂN VẬT
       </h1>
-      <p class="text-slate-400 text-sm mt-1.5 font-medium">Web Game P2P Thời Gian Thực</p>
+      <p class="text-slate-400 text-xs sm:text-sm mt-1 font-medium">Trò chơi suy luận danh tính thời gian thực</p>
     </div>
 
     <div class="space-y-4">
       <div>
-        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 ml-1">Tên hiển thị của bạn</label>
-        <input id="input-name" type="text" maxlength="18" placeholder="Nhập tên của bạn..." class="w-full bg-slate-950 border border-slate-700/80 rounded-2xl px-4 py-3.5 text-slate-100 font-semibold placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all">
+        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 ml-1">Tên của bạn</label>
+        <input id="input-name" type="text" maxlength="18" placeholder="Nhập tên hiển thị..." class="w-full bg-slate-950 border border-slate-700/80 rounded-2xl px-4 py-3 text-slate-100 font-semibold placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all text-sm">
       </div>
 
-      <div class="pt-2">
-        <button id="btn-create" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-3.5 rounded-2xl transition duration-200 shadow-lg shadow-amber-500/20 active:scale-[0.98] flex items-center justify-center gap-2">
+      <div class="pt-1">
+        <button id="btn-create" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3.5 rounded-2xl transition duration-200 shadow-lg shadow-amber-500/20 active:scale-[0.98] text-sm">
           Tạo phòng mới
         </button>
       </div>
 
-      <div class="flex items-center my-5">
+      <div class="flex items-center my-4">
         <div class="flex-grow border-t border-slate-800"></div>
-        <span class="px-3 text-slate-500 text-xs font-bold tracking-widest uppercase">Hoặc vào phòng</span>
+        <span class="px-3 text-slate-500 text-[11px] font-bold tracking-widest uppercase">Hoặc</span>
         <div class="flex-grow border-t border-slate-800"></div>
       </div>
 
       <div class="flex gap-2">
-        <input id="input-room-code" type="text" maxlength="4" placeholder="MÃ PHÒNG" class="flex-grow uppercase bg-slate-950 border border-slate-700/80 rounded-2xl px-4 py-3.5 text-center font-mono font-extrabold tracking-widest text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all">
-        <button id="btn-join" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-3.5 rounded-2xl transition duration-200 shadow-lg shadow-indigo-600/20 active:scale-[0.98]">
-          Vào
+        <input id="input-room-code" type="text" maxlength="4" placeholder="MÃ PHÒNG" class="flex-grow uppercase bg-slate-950 border border-slate-700/80 rounded-2xl px-4 py-3 text-center font-mono font-black tracking-widest text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all text-sm">
+        <button id="btn-join" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-3 rounded-2xl transition duration-200 shadow-lg shadow-indigo-600/20 active:scale-[0.98] text-sm flex-shrink-0">
+          Vào phòng
         </button>
       </div>
     </div>
   </div>
 
   <!-- MÀN HÌNH 2: PHÒNG CHỜ (LOBBY) -->
-  <div id="screen-lobby" class="w-full max-w-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-2xl hidden my-auto transition-all">
-    <div class="flex flex-wrap gap-3 justify-between items-center border-b border-slate-800 pb-5 mb-5">
-      <div>
-        <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Mã phòng</span>
-        <div class="flex items-center gap-2 mt-0.5">
-          <h2 id="lobby-room-code" class="text-3xl font-black text-amber-400 tracking-widest font-mono">----</h2>
-          <button id="btn-copy-code-lobby" title="Sao chép mã phòng" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition active:scale-90 text-xs font-semibold flex items-center gap-1.5 border border-slate-700">
+  <div id="screen-lobby" class="w-full max-w-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-3xl p-5 sm:p-7 shadow-2xl hidden my-auto transition-all space-y-5">
+    
+    <!-- Header Phòng Chờ Tinh Gọn -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+      <div class="flex items-center gap-3">
+        <div>
+          <span class="text-[10px] text-slate-500 font-black uppercase tracking-wider block">Mã phòng</span>
+          <span id="lobby-room-code" class="text-2xl sm:text-3xl font-black text-amber-400 tracking-widest font-mono">----</span>
+        </div>
+        <div class="flex items-center gap-1.5 mt-2">
+          <button id="btn-copy-code-lobby" title="Sao chép mã" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition active:scale-95 border border-slate-700 flex items-center gap-1">
+            <span>📋</span>
             <span>Copy</span>
           </button>
-          <button id="btn-open-qr-lobby" title="Xem mã QR để quét vào phòng" class="p-2 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 transition active:scale-90 text-xs font-bold flex items-center gap-1.5 border border-indigo-500/40">
-            <span>📱 Mã QR</span>
+          <button id="btn-open-qr-lobby" title="Mã QR" class="px-2.5 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-bold transition active:scale-95 border border-indigo-500/30 flex items-center gap-1">
+            <span>📱</span>
+            <span>QR</span>
           </button>
         </div>
       </div>
-      <div class="flex items-center gap-2 flex-wrap">
-        <div id="badge-current-theme" class="px-3.5 py-1.5 bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 text-xs font-bold rounded-full max-w-xs truncate">
-          Chủ đề: Showbiz
-        </div>
-        <div id="badge-lobby-timer" class="px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold rounded-full">
-          ⏱️ 45s / lượt
-        </div>
-        <div id="badge-lobby-questions" class="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold rounded-full">
-          🎯 Không giới hạn câu
-        </div>
-        <button onclick="leaveRoom()" class="px-3 py-1.5 bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 text-rose-400 text-xs font-bold rounded-full transition active:scale-95">
-          🚪 Rời phòng
+
+      <!-- Cụm Badge Trạng Thái -->
+      <div class="flex flex-wrap items-center gap-1.5">
+        <span id="badge-current-theme" class="px-3 py-1 bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-bold rounded-xl max-w-[160px] truncate">
+          Showbiz
+        </span>
+        <span id="badge-lobby-timer" class="px-3 py-1 bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs font-bold rounded-xl">
+          ⏱️ 45s
+        </span>
+        <span id="badge-lobby-questions" class="px-3 py-1 bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-xs font-bold rounded-xl">
+          🎯 ∞ câu
+        </span>
+        <button onclick="leaveRoom()" class="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 rounded-xl text-xs font-bold transition active:scale-95" title="Rời phòng">
+          🚪
         </button>
       </div>
     </div>
 
     <!-- Danh sách người chơi -->
-    <div class="mb-5">
-      <div class="flex justify-between items-center mb-3">
-        <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wide">Danh sách người chơi</h3>
-        <span class="text-xs font-bold px-2.5 py-0.5 bg-slate-800 border border-slate-700 rounded-full text-slate-400">
-          <span id="lobby-player-count">0</span> người
-        </span>
+    <div>
+      <div class="flex justify-between items-center mb-2.5">
+        <h3 class="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Thành viên phòng</h3>
+        <span class="text-xs font-bold text-slate-400"><span id="lobby-player-count">0</span> người</span>
       </div>
-      <div id="lobby-player-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+      <div id="lobby-player-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
     </div>
 
-    <!-- Cài đặt dành cho Chủ phòng -->
-    <div id="host-settings" class="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 mb-5 hidden space-y-4">
-      <div class="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-slate-850">
+    <!-- Cài đặt dành cho Chủ phòng (Gọn gàng) -->
+    <div id="host-settings" class="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 space-y-3.5 hidden">
+      
+      <!-- Kho nhân vật -->
+      <div class="flex items-center justify-between">
         <div>
-          <h4 class="text-xs font-extrabold uppercase tracking-wider text-amber-400">Kho nhân vật ván đấu</h4>
-          <p class="text-[11px] text-slate-400">Đang có <b id="lobby-char-count" class="text-amber-400">0</b> nhân vật sẵn sàng.</p>
+          <span class="text-xs font-black uppercase tracking-wider text-slate-200 block">Kho nhân vật</span>
+          <span class="text-[11px] text-slate-400">Đang có <b id="lobby-char-count" class="text-amber-400 font-extrabold">0</b> tên sẵn sàng</span>
         </div>
-        <button id="btn-open-char-modal" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black transition shadow-lg shadow-amber-500/20 flex items-center gap-1.5 active:scale-95">
-          <span>📦 Chọn Gói Chủ Đề / Sửa Kho</span>
+        <button id="btn-open-char-modal" class="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black transition active:scale-95 shadow-md shadow-amber-500/20">
+          Đổi chủ đề
         </button>
       </div>
 
-      <!-- 1. Cài đặt Giới hạn thời gian -->
-      <div class="pb-3 border-b border-slate-850">
-        <div class="flex items-center justify-between mb-2.5">
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-extrabold uppercase tracking-wider text-slate-200">⏱️ Giới hạn thời gian lượt</span>
-            <span class="text-[11px] text-slate-400">(Tự bỏ lượt khi hết giờ)</span>
-          </div>
+      <div class="border-t border-slate-800/80"></div>
+
+      <!-- Thời gian mỗi lượt -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-slate-300">Đếm ngược lượt</span>
           <label class="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" id="toggle-turn-timer" class="sr-only peer" checked>
-            <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+            <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
           </label>
         </div>
-
-        <div id="timer-options-container" class="grid grid-cols-4 gap-2 transition-all">
-          <button type="button" onclick="setTimerSeconds(30)" class="timer-btn py-2 rounded-xl border text-xs font-extrabold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600" data-sec="30">30 Giây</button>
-          <button type="button" onclick="setTimerSeconds(45)" class="timer-btn py-2 rounded-xl border text-xs font-extrabold transition bg-amber-500/20 border-amber-400 text-amber-300 ring-1 ring-amber-400/40" data-sec="45">45 Giây</button>
-          <button type="button" onclick="setTimerSeconds(60)" class="timer-btn py-2 rounded-xl border text-xs font-extrabold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600" data-sec="60">60 Giây</button>
-          <button type="button" onclick="setTimerSeconds(90)" class="timer-btn py-2 rounded-xl border text-xs font-extrabold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600" data-sec="90">90 Giây</button>
+        <div id="timer-options-container" class="grid grid-cols-4 gap-1.5">
+          <button type="button" onclick="setTimerSeconds(30)" class="timer-btn py-1.5 rounded-xl border text-xs font-extrabold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600" data-sec="30">30s</button>
+          <button type="button" onclick="setTimerSeconds(45)" class="timer-btn py-1.5 rounded-xl border text-xs font-extrabold transition bg-amber-500/20 border-amber-400 text-amber-300 ring-1 ring-amber-400/40" data-sec="45">45s</button>
+          <button type="button" onclick="setTimerSeconds(60)" class="timer-btn py-1.5 rounded-xl border text-xs font-extrabold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600" data-sec="60">60s</button>
+          <button type="button" onclick="setTimerSeconds(90)" class="timer-btn py-1.5 rounded-xl border text-xs font-extrabold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600" data-sec="90">90s</button>
         </div>
       </div>
 
-      <!-- 2. Cài đặt Giới hạn số câu hỏi tối đa -->
+      <div class="border-t border-slate-800/80"></div>
+
+      <!-- Giới hạn câu hỏi -->
       <div>
-        <div class="flex items-center justify-between mb-2.5">
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-extrabold uppercase tracking-wider text-slate-200">🎯 Giới hạn số câu hỏi / người</span>
-            <span class="text-[11px] text-slate-400">(Hết câu chỉ được đoán tên)</span>
-          </div>
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-slate-300">Giới hạn câu hỏi</span>
           <label class="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" id="toggle-max-questions" class="sr-only peer">
-            <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+            <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
           </label>
         </div>
-
-        <div id="max-questions-options-container" class="grid grid-cols-4 gap-2 transition-all opacity-40 pointer-events-none">
-          <button type="button" onclick="setMaxQuestionsCount(10)" class="max-q-btn py-2 rounded-xl border text-xs font-extrabold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600" data-q="10">10 Câu</button>
-          <button type="button" onclick="setMaxQuestionsCount(15)" class="max-q-btn py-2 rounded-xl border text-xs font-extrabold transition bg-emerald-500/20 border-emerald-400 text-emerald-300 ring-1 ring-emerald-400/40" data-q="15">15 Câu</button>
-          <button type="button" onclick="setMaxQuestionsCount(20)" class="max-q-btn py-2 rounded-xl border text-xs font-extrabold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600" data-q="20">20 Câu</button>
-          <button type="button" onclick="setMaxQuestionsCount(25)" class="max-q-btn py-2 rounded-xl border text-xs font-extrabold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600" data-q="25">25 Câu</button>
+        <div id="max-questions-options-container" class="grid grid-cols-4 gap-1.5 opacity-40 pointer-events-none">
+          <button type="button" onclick="setMaxQuestionsCount(10)" class="max-q-btn py-1.5 rounded-xl border text-xs font-extrabold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600" data-q="10">10 câu</button>
+          <button type="button" onclick="setMaxQuestionsCount(15)" class="max-q-btn py-1.5 rounded-xl border text-xs font-extrabold transition bg-emerald-500/20 border-emerald-400 text-emerald-300 ring-1 ring-emerald-400/40" data-q="15">15 câu</button>
+          <button type="button" onclick="setMaxQuestionsCount(20)" class="max-q-btn py-1.5 rounded-xl border text-xs font-extrabold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600" data-q="20">20 câu</button>
+          <button type="button" onclick="setMaxQuestionsCount(25)" class="max-q-btn py-1.5 rounded-xl border text-xs font-extrabold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600" data-q="25">25 câu</button>
         </div>
       </div>
 
     </div>
 
+    <!-- Action Bắt đầu -->
     <div>
-      <button id="btn-start-game" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-4 rounded-2xl transition duration-200 shadow-lg shadow-emerald-600/20 active:scale-[0.98] hidden text-base">
-        Bắt đầu trò chơi
+      <button id="btn-start-game" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3.5 rounded-2xl transition duration-200 shadow-lg shadow-emerald-600/20 active:scale-[0.98] hidden text-sm sm:text-base">
+        Bắt đầu ván đấu 🚀
       </button>
-      <div id="wait-host-msg" class="w-full text-center text-sm font-medium text-slate-400 py-3.5 bg-slate-950/40 border border-slate-800 rounded-2xl flex items-center justify-center gap-2">
+      <div id="wait-host-msg" class="w-full text-center text-xs sm:text-sm font-medium text-slate-400 py-3 bg-slate-950/40 border border-slate-800 rounded-2xl flex items-center justify-center gap-2">
         <div class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></div>
         Đang chờ chủ phòng bắt đầu...
       </div>
@@ -277,233 +282,233 @@
   </div>
 
   <!-- MÀN HÌNH 3: BÀN CHƠI CHÍNH -->
-  <div id="screen-game" class="w-full max-w-5xl hidden flex-grow flex flex-col gap-4 pb-16">
-    <div class="flex flex-wrap gap-2 justify-between items-center bg-slate-900/90 border border-slate-800 backdrop-blur-xl px-5 py-3.5 rounded-2xl shadow-lg">
-      <div class="flex items-center gap-3">
-        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Phòng:</span>
-        <span id="game-room-code" class="font-black text-amber-400 tracking-wider font-mono text-lg"></span>
-        <button id="btn-copy-code-game" title="Sao chép mã phòng" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition text-xs border border-slate-700">
-          Copy
+  <div id="screen-game" class="w-full max-w-5xl hidden flex-grow flex flex-col gap-3.5 pb-16">
+    
+    <!-- Top Bar -->
+    <div class="flex flex-wrap gap-2 justify-between items-center bg-slate-900/90 border border-slate-800 backdrop-blur-xl px-4 py-2.5 rounded-2xl shadow-lg">
+      <div class="flex items-center gap-2">
+        <span class="text-[11px] font-bold text-slate-400">Phòng:</span>
+        <span id="game-room-code" class="font-black text-amber-400 tracking-wider font-mono text-sm sm:text-base"></span>
+        <button id="btn-copy-code-game" title="Sao chép mã" class="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition text-[10px] border border-slate-700">
+          📋
         </button>
       </div>
 
-      <div class="flex items-center gap-3">
-        <!-- Đếm số câu hỏi của bạn -->
-        <div id="game-questions-badge" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-300">
+      <div class="flex items-center gap-2">
+        <div id="game-questions-badge" class="hidden items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-[11px] font-bold text-slate-300">
           <span>🎯</span>
           <span id="game-questions-text" class="text-emerald-400 font-mono font-black">0/15</span>
         </div>
 
-        <div id="game-timer-container" class="hidden items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 font-mono font-black text-sm">
-          <span class="text-slate-400 text-xs">⏳</span>
-          <span id="game-timer-text" class="text-amber-400 tracking-wider">45s</span>
+        <div id="game-timer-container" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 font-mono font-black text-xs sm:text-sm">
+          <span>⏳</span>
+          <span id="game-timer-text" class="text-amber-400">45s</span>
         </div>
 
-        <div id="turn-banner" class="text-xs sm:text-sm font-bold px-4 py-1.5 rounded-full transition-all duration-300">
+        <div id="turn-banner" class="text-xs sm:text-sm font-extrabold px-3.5 py-1 rounded-full transition-all">
           Lượt của ai đó
         </div>
-        <button id="btn-restart-game" class="hidden text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3.5 py-1.5 rounded-xl transition shadow-md">
-          Chơi ván mới
+
+        <button id="btn-restart-game" class="hidden text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1 rounded-xl transition shadow-md">
+          Ván mới
         </button>
-        <button onclick="leaveRoom()" class="p-2 rounded-xl bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border border-slate-700 text-xs font-bold transition active:scale-95" title="Rời phòng">
+        <button onclick="leaveRoom()" class="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border border-slate-700 text-xs font-bold transition active:scale-95" title="Rời phòng">
           🚪
         </button>
       </div>
     </div>
 
     <!-- Timer Visual Bar -->
-    <div id="timer-progress-bar-wrap" class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden hidden -mt-2">
+    <div id="timer-progress-bar-wrap" class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden hidden -mt-1">
       <div id="timer-progress-bar" class="bg-amber-400 h-full w-full transition-all duration-200"></div>
     </div>
 
-    <!-- Players Grid -->
-    <div id="players-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4"></div>
+    <!-- Grid Thẻ Người Chơi -->
+    <div id="players-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3"></div>
 
-    <!-- Control Area -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 flex-grow">
-      <div class="md:col-span-2 flex flex-col gap-4">
+    <!-- Khu Vực Thao Tác & Biểu Quyết -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 flex-grow">
+      <div class="md:col-span-2 flex flex-col gap-3">
 
-        <!-- Last Result -->
-        <div id="panel-last-result" class="bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-2xl p-4 shadow-lg hidden">
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="text-[11px] font-extrabold text-amber-400 uppercase tracking-wider">Kết quả câu hỏi vừa xong</span>
-            <span class="text-[10px] text-slate-500 font-medium">Lượt trước</span>
-          </div>
-          <p id="last-result-text" class="text-sm font-semibold text-slate-100 italic mb-2.5"></p>
-          <div id="last-result-badges" class="flex flex-wrap gap-2 text-xs"></div>
+        <!-- Kết Quả Lượt Trước -->
+        <div id="panel-last-result" class="bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-2xl p-3.5 shadow-lg hidden">
+          <span class="text-[10px] font-black text-amber-400 uppercase tracking-wider block mb-1">Kết quả vừa xong</span>
+          <p id="last-result-text" class="text-xs sm:text-sm font-semibold text-slate-100 italic mb-2"></p>
+          <div id="last-result-badges" class="flex flex-wrap gap-1.5 text-xs"></div>
         </div>
 
-        <!-- My Turn Controls -->
-        <div id="panel-my-turn" class="bg-gradient-to-b from-amber-500/10 via-slate-900 to-slate-900 border-2 border-amber-400/80 rounded-3xl p-5 shadow-2xl hidden relative overflow-hidden">
-          <div class="flex items-center justify-between mb-3.5">
-            <div class="flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
-              <span class="text-xs font-extrabold text-amber-400 uppercase tracking-wider">Đang là lượt của bạn</span>
-            </div>
-            <span id="turn-limit-warning" class="text-xs text-slate-400 font-medium">Hỏi Có/Không hoặc chốt đoán tên</span>
+        <!-- Bảng Thao Tác (Khi Đến Lượt) -->
+        <div id="panel-my-turn" class="bg-gradient-to-b from-amber-500/10 via-slate-900 to-slate-900 border-2 border-amber-400/80 rounded-3xl p-4 sm:p-5 shadow-2xl hidden space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+              Lượt hành động của bạn
+            </span>
+            <span id="turn-limit-warning" class="text-[11px] text-slate-400 font-medium">Hỏi Có/Không hoặc đoán tên</span>
           </div>
 
-          <div class="space-y-3">
-            <div class="flex gap-2">
-              <input id="input-question" type="text" placeholder="Ví dụ: Tôi có phải là nhân vật hoạt hình không?..." class="flex-grow bg-slate-950 border border-slate-700/80 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 text-slate-100 placeholder-slate-500 disabled:opacity-40 disabled:cursor-not-allowed">
-              <button id="btn-open-question-assistant" class="px-3.5 py-3 rounded-2xl bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/40 text-xs font-extrabold transition active:scale-95 flex items-center gap-1.5 flex-shrink-0" title="Mở danh sách câu hỏi mẫu">
-                <span>💡</span>
-                <span class="hidden sm:inline">Gợi ý</span>
-              </button>
-              <button id="btn-send-question" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-5 py-3 rounded-2xl text-sm transition shadow-lg shadow-amber-500/20 active:scale-95 flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed">
-                Hỏi
-              </button>
-            </div>
+          <!-- Nhánh 1: Đặt câu hỏi -->
+          <div class="flex gap-1.5">
+            <input id="input-question" type="text" placeholder="Ví dụ: Tôi có phải là ca sĩ không?..." class="flex-grow bg-slate-950 border border-slate-700/80 rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 text-slate-100 placeholder-slate-500 disabled:opacity-40 disabled:cursor-not-allowed">
+            <button id="btn-open-question-assistant" class="px-3 py-2.5 rounded-2xl bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/40 text-xs font-bold transition active:scale-95 flex items-center gap-1 flex-shrink-0" title="Gợi ý câu hỏi">
+              <span>💡</span>
+              <span class="hidden sm:inline">Gợi ý</span>
+            </button>
+            <button id="btn-send-question" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-4 py-2.5 rounded-2xl text-xs sm:text-sm transition active:scale-95 flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed">
+              Hỏi
+            </button>
+          </div>
 
-            <div class="flex flex-wrap sm:flex-nowrap items-center gap-2">
-              <input id="input-guess-name" type="text" placeholder="Tôi đoán tôi là ai? (Ví dụ: Elsa, Sơn Tùng)..." class="flex-grow bg-slate-950 border border-slate-700/80 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 text-slate-100 placeholder-slate-500">
-              <div class="flex gap-2 w-full sm:w-auto">
-                <button id="btn-make-guess" class="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-5 py-3 rounded-2xl text-sm transition shadow-lg shadow-emerald-600/20 active:scale-95 flex-shrink-0">
-                  Chốt đoán!
-                </button>
-                <button id="btn-skip-turn" class="flex-1 sm:flex-initial bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-3 rounded-2xl text-sm transition active:scale-95 border border-slate-700 flex-shrink-0">
-                  Bỏ lượt
-                </button>
-              </div>
+          <!-- Nhánh 2: Chốt đoán tên -->
+          <div class="flex flex-wrap sm:flex-nowrap items-center gap-1.5 pt-1">
+            <input id="input-guess-name" type="text" placeholder="Tôi đoán tôi là ai? (Ví dụ: Sơn Tùng, Doraemon)..." class="flex-grow bg-slate-950 border border-slate-700/80 rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 text-slate-100 placeholder-slate-500">
+            <div class="flex gap-1.5 w-full sm:w-auto">
+              <button id="btn-make-guess" class="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-500 text-white font-black px-4 py-2.5 rounded-2xl text-xs sm:text-sm transition active:scale-95 flex-shrink-0">
+                Chốt đoán!
+              </button>
+              <button id="btn-skip-turn" class="flex-1 sm:flex-initial bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-3 py-2.5 rounded-2xl text-xs sm:text-sm transition active:scale-95 border border-slate-700 flex-shrink-0">
+                Bỏ lượt
+              </button>
             </div>
           </div>
         </div>
 
-        <!-- Voting Panel -->
-        <div id="panel-vote" class="bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-3xl p-5 shadow-xl flex-grow flex flex-col justify-between">
+        <!-- Bảng Biểu Quyết / Trả Lời -->
+        <div id="panel-vote" class="bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-3xl p-4 sm:p-5 shadow-xl flex-grow flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-2">
-              <span id="vote-panel-title" class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Câu hỏi trên bàn</span>
+              <span id="vote-panel-title" class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Bàn biểu quyết</span>
               <span id="vote-counter-badge" class="text-[11px] font-semibold text-slate-400"></span>
             </div>
             
-            <div id="vote-content-container" class="min-h-[60px] flex flex-col justify-center bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80 mb-4">
-              <p id="current-question-text" class="text-base sm:text-lg font-medium text-slate-200 italic">Chưa có câu hỏi nào trong lượt này...</p>
+            <div id="vote-content-container" class="min-h-[56px] flex flex-col justify-center bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800/80 mb-3">
+              <p id="current-question-text" class="text-sm sm:text-base font-medium text-slate-200 italic">Chưa có câu hỏi nào trong lượt này...</p>
               
               <div id="guess-verify-extra" class="hidden mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
                 <span class="text-slate-400">Nhân vật thật trên đầu họ:</span>
-                <span id="guess-real-char-name" class="font-extrabold text-amber-400 text-sm px-2.5 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/20"></span>
+                <span id="guess-real-char-name" class="font-extrabold text-amber-400 text-xs sm:text-sm px-2.5 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/20"></span>
               </div>
             </div>
           </div>
 
           <div>
-            <div id="voting-buttons-regular" class="grid grid-cols-3 gap-2.5 hidden">
-              <button id="btn-vote-yes" onclick="selectVoteOption('YES')" class="vote-opt-btn bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-black py-3.5 rounded-2xl transition active:scale-95 text-sm sm:text-base tracking-wide">
+            <!-- Bộ nút CÓ / KHÔNG / KHÔNG RÕ -->
+            <div id="voting-buttons-regular" class="grid grid-cols-3 gap-2 hidden">
+              <button id="btn-vote-yes" onclick="selectVoteOption('YES')" class="vote-opt-btn bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-black py-3 rounded-2xl transition active:scale-95 text-xs sm:text-sm tracking-wide">
                 CÓ
               </button>
-              <button id="btn-vote-no" onclick="selectVoteOption('NO')" class="vote-opt-btn bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-black py-3.5 rounded-2xl transition active:scale-95 text-sm sm:text-base tracking-wide">
+              <button id="btn-vote-no" onclick="selectVoteOption('NO')" class="vote-opt-btn bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-black py-3 rounded-2xl transition active:scale-95 text-xs sm:text-sm tracking-wide">
                 KHÔNG
               </button>
-              <button id="btn-vote-unknown" onclick="selectVoteOption('UNKNOWN')" class="vote-opt-btn bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold py-3.5 rounded-2xl transition active:scale-95 text-xs sm:text-sm tracking-wide">
+              <button id="btn-vote-unknown" onclick="selectVoteOption('UNKNOWN')" class="vote-opt-btn bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold py-3 rounded-2xl transition active:scale-95 text-xs tracking-wide">
                 KHÔNG RÕ
               </button>
             </div>
 
-            <div id="voting-buttons-guess" class="grid grid-cols-2 gap-3 hidden">
-              <button id="btn-guess-correct" onclick="selectVoteOption('CORRECT')" class="vote-opt-btn bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border-2 border-emerald-500/50 font-black py-3.5 rounded-2xl transition active:scale-95 text-base tracking-wide flex items-center justify-center gap-2">
+            <!-- Bộ nút ĐÚNG / SAI khi có người đoán tên -->
+            <div id="voting-buttons-guess" class="grid grid-cols-2 gap-2 hidden">
+              <button id="btn-guess-correct" onclick="selectVoteOption('CORRECT')" class="vote-opt-btn bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border-2 border-emerald-500/50 font-black py-3 rounded-2xl transition active:scale-95 text-xs sm:text-sm tracking-wide flex items-center justify-center gap-1.5">
                 <span>✓</span> ĐÚNG RỒI
               </button>
-              <button id="btn-guess-wrong" onclick="selectVoteOption('WRONG')" class="vote-opt-btn bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border-2 border-rose-500/50 font-black py-3.5 rounded-2xl transition active:scale-95 text-base tracking-wide flex items-center justify-center gap-2">
+              <button id="btn-guess-wrong" onclick="selectVoteOption('WRONG')" class="vote-opt-btn bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border-2 border-rose-500/50 font-black py-3 rounded-2xl transition active:scale-95 text-xs sm:text-sm tracking-wide flex items-center justify-center gap-1.5">
                 <span>✗</span> SAI RỒI
               </button>
             </div>
 
-            <div id="panel-vote-confirm" class="hidden mt-3 p-3 bg-slate-950/90 border border-amber-500/40 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-lg">
+            <!-- Thanh xác nhận -->
+            <div id="panel-vote-confirm" class="hidden mt-2.5 p-2.5 bg-slate-950/90 border border-amber-500/40 rounded-2xl flex items-center justify-between gap-2 shadow-lg">
               <div class="text-xs">
-                <span class="text-slate-400">Bạn đã chọn:</span>
-                <span id="pending-vote-label" class="font-black text-sm ml-1"></span>
+                <span class="text-slate-400">Đã chọn:</span>
+                <span id="pending-vote-label" class="font-black text-xs sm:text-sm ml-1"></span>
               </div>
-              <div class="flex items-center gap-2">
-                <button id="btn-cancel-vote" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition border border-slate-700 active:scale-95">
-                  Chọn lại
+              <div class="flex items-center gap-1.5">
+                <button id="btn-cancel-vote" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition border border-slate-700 active:scale-95">
+                  Đổi
                 </button>
-                <button id="btn-confirm-vote" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black shadow-md shadow-amber-500/20 transition active:scale-95 flex items-center gap-1">
-                  <span>Xác nhận gửi</span>
-                  <span>✓</span>
+                <button id="btn-confirm-vote" class="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black shadow-md shadow-amber-500/20 transition active:scale-95">
+                  Gửi ✓
                 </button>
               </div>
             </div>
 
-            <div id="vote-results" class="mt-3.5 pt-3 border-t border-slate-800 flex flex-wrap gap-2 text-xs"></div>
+            <div id="vote-results" class="mt-2.5 pt-2.5 border-t border-slate-800 flex flex-wrap gap-1.5 text-xs"></div>
           </div>
         </div>
 
       </div>
 
-      <!-- Logs với Tab Lọc (Tất cả vs Của tôi) -->
-      <div class="bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-3xl p-4 flex flex-col h-72 md:h-auto shadow-xl">
-        <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-800">
+      <!-- Nhật Ký Diễn Biến -->
+      <div class="bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-3xl p-3.5 sm:p-4 flex flex-col h-64 md:h-auto shadow-xl">
+        <div class="flex items-center justify-between mb-2.5 pb-2 border-b border-slate-800">
           <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">
-            Nhật ký diễn biến
+            Nhật ký
           </span>
-          <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-[11px] font-bold">
-            <button id="tab-log-all" onclick="setLogFilter('ALL')" class="px-2.5 py-0.5 rounded-lg bg-indigo-600 text-white transition">Tất cả</button>
-            <button id="tab-log-mine" onclick="setLogFilter('MINE')" class="px-2.5 py-0.5 rounded-lg text-slate-400 hover:text-slate-200 transition">Của tôi</button>
+          <div class="flex items-center bg-slate-950 p-0.5 rounded-xl border border-slate-800 text-[10px] font-bold">
+            <button id="tab-log-all" onclick="setLogFilter('ALL')" class="px-2 py-0.5 rounded-lg bg-indigo-600 text-white transition">Tất cả</button>
+            <button id="tab-log-mine" onclick="setLogFilter('MINE')" class="px-2 py-0.5 rounded-lg text-slate-400 hover:text-slate-200 transition">Của tôi</button>
           </div>
         </div>
-        <div id="game-logs" class="flex-grow overflow-y-auto space-y-2 text-xs text-slate-300 pr-1 custom-scrollbar"></div>
+        <div id="game-logs" class="flex-grow overflow-y-auto space-y-1.5 text-xs text-slate-300 pr-1 custom-scrollbar"></div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL QR CODE VÀO PHÒNG -->
+  <!-- MODAL QR CODE -->
   <div id="modal-qr-code" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="w-full max-w-sm bg-slate-900 border border-indigo-500/40 rounded-3xl p-6 shadow-2xl flex flex-col items-center text-center gap-4">
+    <div class="w-full max-w-sm bg-slate-900 border border-indigo-500/40 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col items-center text-center gap-3">
       <div class="flex justify-between items-center w-full pb-2 border-b border-slate-800">
-        <h3 class="text-sm font-black text-indigo-400 uppercase tracking-wider">📱 Quét QR để vào phòng</h3>
-        <button id="btn-close-qr-modal" class="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-100 transition text-sm">✕</button>
+        <h3 class="text-xs font-black text-indigo-400 uppercase tracking-wider">📱 Quét QR vào phòng</h3>
+        <button id="btn-close-qr-modal" class="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-100 transition text-xs">✕</button>
       </div>
 
-      <div class="p-3 bg-slate-950 rounded-2xl border border-slate-800 shadow-inner">
-        <img id="qr-image" src="" alt="Mã QR Phòng" class="w-48 h-48 rounded-xl object-contain">
+      <div class="p-2.5 bg-slate-950 rounded-2xl border border-slate-800 shadow-inner">
+        <img id="qr-image" src="" alt="QR" class="w-44 h-44 rounded-xl object-contain">
       </div>
 
       <div>
-        <p class="text-xs text-slate-400">Mã phòng: <b id="qr-room-text" class="text-amber-400 font-mono font-black tracking-widest text-base">----</b></p>
-        <p class="text-[11px] text-slate-500 mt-1">Bạn bè quét camera là vào thẳng phòng, không cần gõ mã.</p>
+        <p class="text-xs text-slate-400">Mã phòng: <b id="qr-room-text" class="text-amber-400 font-mono font-black text-base">----</b></p>
       </div>
     </div>
   </div>
 
   <!-- MODAL GỢI Ý CÂU HỎI -->
   <div id="modal-question-assistant" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4 hidden">
-    <div class="w-full max-w-lg bg-slate-900 border border-indigo-500/40 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col max-h-[85vh]">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+    <div class="w-full max-w-lg bg-slate-900 border border-indigo-500/40 rounded-3xl p-4 sm:p-5 shadow-2xl flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between pb-2.5 border-b border-slate-800 mb-3">
         <div class="flex items-center gap-2">
-          <span class="text-xl">💡</span>
+          <span class="text-lg">💡</span>
           <div>
-            <h3 class="text-base font-black text-indigo-400 uppercase tracking-wider">Trợ lý gợi ý câu hỏi</h3>
-            <p class="text-[11px] text-slate-400">Chọn 1 câu hỏi để tự động điền vào lượt của bạn</p>
+            <h3 class="text-xs sm:text-sm font-black text-indigo-400 uppercase tracking-wider">Gợi ý câu hỏi</h3>
+            <p class="text-[10px] text-slate-400">Bấm câu hỏi để tự động điền vào ô</p>
           </div>
         </div>
-        <button id="btn-close-assistant-modal" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition">✕</button>
+        <button id="btn-close-assistant-modal" class="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition text-xs">✕</button>
       </div>
 
-      <div id="assistant-categories" class="flex-grow overflow-y-auto space-y-4 pr-1 custom-scrollbar"></div>
+      <div id="assistant-categories" class="flex-grow overflow-y-auto space-y-3 pr-1 custom-scrollbar"></div>
     </div>
   </div>
 
   <!-- MODAL LEADERBOARD -->
   <div id="modal-leaderboard" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4 hidden">
-    <div class="w-full max-w-lg bg-slate-900 border-2 border-amber-500/40 rounded-3xl p-6 shadow-2xl flex flex-col gap-4">
+    <div class="w-full max-w-md bg-slate-900 border-2 border-amber-500/40 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col gap-3.5">
       <div class="text-center">
-        <div class="inline-flex p-3.5 bg-amber-500/20 border border-amber-500/40 rounded-2xl text-3xl mb-2 animate-bounce">
+        <div class="inline-flex p-2.5 bg-amber-500/20 border border-amber-500/40 rounded-2xl text-2xl mb-1.5 animate-bounce">
           👑
         </div>
-        <h3 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 uppercase tracking-tight">
-          KẾT THÚC TRẬN ĐẤU
+        <h3 class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 uppercase tracking-tight">
+          KẾT THÚC VÁN ĐẤU
         </h3>
-        <p class="text-xs text-slate-400 mt-1">Bảng tổng sắp thành tích suy luận của mọi người</p>
+        <p class="text-xs text-slate-400">Bảng tổng kết thành tích suy luận</p>
       </div>
 
-      <div id="leaderboard-player-list" class="space-y-2.5 my-2 max-h-72 overflow-y-auto pr-1 custom-scrollbar"></div>
+      <div id="leaderboard-player-list" class="space-y-2 my-1 max-h-64 overflow-y-auto pr-1 custom-scrollbar"></div>
 
       <div class="pt-2 border-t border-slate-800 flex justify-center">
-        <button id="btn-leaderboard-restart" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3.5 rounded-2xl transition shadow-lg shadow-emerald-600/20 active:scale-98 hidden text-sm">
-          🔄 Bắt đầu ván mới cùng mọi người
+        <button id="btn-leaderboard-restart" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-2xl transition shadow-lg shadow-emerald-600/20 active:scale-98 hidden text-xs sm:text-sm">
+          Bắt đầu ván mới 🔄
         </button>
-        <div id="leaderboard-wait-msg" class="text-xs text-slate-400 font-medium py-2 flex items-center gap-2">
+        <div id="leaderboard-wait-msg" class="text-xs text-slate-400 font-medium py-1.5 flex items-center gap-2">
           <div class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></div>
           Đang chờ chủ phòng bắt đầu ván mới...
         </div>
@@ -513,49 +518,46 @@
 
   <!-- MODAL QUẢN LÝ KHO NHÂN VẬT -->
   <div id="modal-char-manager" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4 hidden">
-    <div class="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col max-h-[90vh]">
+    <div class="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col max-h-[90vh]">
       
-      <div class="flex justify-between items-center pb-3 border-b border-slate-800 mb-3">
+      <div class="flex justify-between items-center pb-2.5 border-b border-slate-800 mb-3">
         <div>
-          <h3 class="text-base sm:text-lg font-black text-amber-400 flex items-center gap-2">
-            <span>📦</span> KHO NHÂN VẬT & GÓI CHỦ ĐỀ
+          <h3 class="text-sm sm:text-base font-black text-amber-400 flex items-center gap-1.5">
+            <span>📦</span> KHO NHÂN VẬT
           </h3>
-          <p class="text-xs text-slate-400">Chọn cùng lúc nhiều chủ đề hoặc thêm nhân vật tùy thích.</p>
+          <p class="text-xs text-slate-400">Chọn nhiều gói chủ đề hoặc tự thêm tên</p>
         </div>
-        <button id="btn-close-char-modal" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition">✕</button>
+        <button id="btn-close-char-modal" class="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition text-xs">✕</button>
       </div>
 
-      <div class="bg-slate-950/90 p-3.5 rounded-2xl border border-amber-500/30 mb-3">
-        <div class="flex items-center justify-between mb-2.5">
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-black uppercase tracking-wider text-amber-400">⚡ Chọn nhiều gói chủ đề</span>
-            <span id="modal-active-theme-pill" class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold text-[10px] border border-amber-500/30"></span>
-          </div>
-          <div class="flex items-center gap-2 text-[11px]">
-            <button id="btn-select-all-presets" class="text-amber-400 hover:text-amber-300 font-bold hover:underline">Chọn tất cả</button>
+      <div class="bg-slate-950/90 p-3 rounded-2xl border border-amber-500/30 mb-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-black uppercase tracking-wider text-amber-400">Chọn gói chủ đề</span>
+          <div class="flex items-center gap-2 text-[10px]">
+            <button id="btn-select-all-presets" class="text-amber-400 hover:text-amber-300 font-bold hover:underline">Tất cả</button>
             <span class="text-slate-600">•</span>
-            <button id="btn-deselect-all-presets" class="text-slate-400 hover:text-slate-300 font-medium hover:underline">Bỏ chọn hết</button>
+            <button id="btn-deselect-all-presets" class="text-slate-400 hover:text-slate-300 hover:underline">Bỏ chọn</button>
           </div>
         </div>
-        <div id="modal-preset-buttons" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+        <div id="modal-preset-buttons" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5"></div>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
-        <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
-          <span class="block text-[11px] font-bold text-indigo-400 mb-1">🔗 Đồng bộ Google Sheet</span>
+        <div class="bg-slate-950/60 p-2 rounded-xl border border-slate-800">
+          <span class="block text-[10px] font-bold text-indigo-400 mb-1">🔗 Đồng bộ Google Sheet</span>
           <div class="flex gap-1.5">
-            <input id="input-sheet-url" type="text" placeholder="Dán link Sheet..." class="flex-grow bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
-            <button id="btn-sync-sheet" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-2.5 py-1.5 rounded-lg text-xs transition flex-shrink-0">
+            <input id="input-sheet-url" type="text" placeholder="Dán link Sheet..." class="flex-grow bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+            <button id="btn-sync-sheet" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-2 py-1 rounded-lg text-xs transition flex-shrink-0">
               Tải
             </button>
           </div>
         </div>
 
-        <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
-          <span class="block text-[11px] font-bold text-amber-400 mb-1">✍️ Thêm nhân vật tự do</span>
+        <div class="bg-slate-950/60 p-2 rounded-xl border border-slate-800">
+          <span class="block text-[10px] font-bold text-amber-400 mb-1">✍️ Thêm nhân vật tự do</span>
           <div class="flex gap-1.5">
-            <input id="input-add-char" type="text" placeholder="Tên (cách nhau bằng dấu phẩy)..." class="flex-grow bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-400 text-slate-100 placeholder-slate-500">
-            <button id="btn-add-char" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 rounded-lg text-xs transition flex-shrink-0">
+            <input id="input-add-char" type="text" placeholder="Tên (cách nhau dấu phẩy)..." class="flex-grow bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-amber-400 text-slate-100 placeholder-slate-500">
+            <button id="btn-add-char" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-2.5 py-1 rounded-lg text-xs transition flex-shrink-0">
               Thêm
             </button>
           </div>
@@ -564,20 +566,20 @@
 
       <div class="flex items-center justify-between text-xs text-slate-400 pb-1.5 px-1 flex-wrap gap-2">
         <div class="flex items-center gap-2">
-          <span>Tổng: <b id="modal-total-chars" class="text-amber-400 font-extrabold">0</b> nhân vật</span>
-          <input id="input-search-char" type="text" placeholder="🔍 Tìm nhanh thẻ..." class="bg-slate-950 border border-slate-800 rounded-lg px-2 py-0.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-400 w-36">
+          <span>Tổng: <b id="modal-total-chars" class="text-amber-400 font-black">0</b></span>
+          <input id="input-search-char" type="text" placeholder="🔍 Tìm thẻ..." class="bg-slate-950 border border-slate-800 rounded-lg px-2 py-0.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-400 w-28">
         </div>
-        <div class="flex gap-2 text-[11px]">
-          <button id="btn-export-chars" class="hover:text-slate-200 underline">Copy tất cả</button>
+        <div class="flex gap-2 text-[10px]">
+          <button id="btn-export-chars" class="hover:text-slate-200 underline">Copy hết</button>
           <span>•</span>
-          <button id="btn-reset-default-chars" class="text-rose-400 hover:text-rose-300 underline">Khôi phục mặc định</button>
+          <button id="btn-reset-default-chars" class="text-rose-400 hover:text-rose-300 underline">Gốc</button>
         </div>
       </div>
 
-      <div id="modal-char-tags" class="flex-grow overflow-y-auto p-3 bg-slate-950 border border-slate-800 rounded-2xl flex flex-wrap gap-1.5 content-start custom-scrollbar min-h-[140px]"></div>
+      <div id="modal-char-tags" class="flex-grow overflow-y-auto p-2.5 bg-slate-950 border border-slate-800 rounded-2xl flex flex-wrap gap-1 content-start custom-scrollbar min-h-[120px]"></div>
 
-      <div class="pt-3 mt-3 border-t border-slate-800 flex justify-end">
-        <button id="btn-save-char-modal" class="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-6 py-2.5 rounded-xl text-sm transition shadow-lg shadow-emerald-600/20">
+      <div class="pt-2.5 mt-2.5 border-t border-slate-800 flex justify-end">
+        <button id="btn-save-char-modal" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black px-5 py-2 rounded-xl text-xs sm:text-sm transition shadow-lg shadow-emerald-600/20">
           Xong & Áp dụng
         </button>
       </div>
